@@ -1,5 +1,6 @@
 (ns advent.day1
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.math.combinatorics :as comb]))
 
 (defn all-pair [lst]
   (for [a lst
@@ -17,21 +18,17 @@
        (map #(Integer/parseInt %))))
 
 (defn day1-p1 [path]
-  (->> path
-       day1-data
-       all-pair
-       (filter (fn [[a b]] (= (+ a b) 2020)))
-       first))
+  (first
+   (filter (fn [[a b]] (= (+ a b) 2020))
+           (comb/combinations (day1-data path) 2))))
 
-(let [[a b] (day1-p1 "resources/input")]
+(let [[a b] (day1-p1 "resources/day1-input")]
   (* a b))
 
 (defn day1-p2 [path]
-  (->> path
-       day1-data
-       all-triple
-       (filter (fn [[a b c]] (= (+ a b c) 2020)))
-       first))
+  (first
+   (filter (fn [[a b c]] (= (+ a b c) 2020))
+           (comb/combinations (day1-data path) 3))))
 
-(let [[a b c] (day1-p2 "resources/input")]
+(let [[a b c] (day1-p2 "resources/day1-input")]
   (* a b c))
