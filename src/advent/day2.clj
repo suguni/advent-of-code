@@ -1,8 +1,6 @@
 (ns advent.day2
   (:require [clojure.string :as str]))
 
-;;
-
 (defn read-line [line]
   (let [[_ b e c pwd]
         (re-find (re-matcher #"(\d+)-(\d+)\s+([a-z])\:\s+([a-z]+)" line))
