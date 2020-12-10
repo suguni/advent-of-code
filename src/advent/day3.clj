@@ -5,7 +5,7 @@
 
 (defn load-tile [filename]
   (-> filename
-      snnlurp
+      slurp
       str/split-lines))
 
 (defn slope-coords [[right down] [width height]]
