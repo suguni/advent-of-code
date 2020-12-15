@@ -1,34 +1,35 @@
 (ns advent.day1
   (:require [clojure.string :as str]
-            [clojure.math.combinatorics :as comb]))
+            [clojure.math.combinatorics :as comb]
+            [clojure.java.io :as io]))
 
-(defn all-pair [lst]
-  (for [a lst
-        b lst]
-    [a b]))
 
-(defn all-triple [lst]
-  (for [a lst
-        b lst
-        c lst]
-    [a b c]))
+(def FILE "resources/day1-input")
 
-(defn day1-data [path]
-  (->> (str/split (slurp path) #"\s")
-       (map #(Integer/parseInt %))))
+(defn read-numbers [filename]
+  (with-open [rdr (io/reader filename)]
+    (->> rdr
+         line-seq
+         (map #(Integer/parseInt %))
+         set)))
 
-(defn day1-p1 [path]
-  (first
-   (filter (fn [[a b]] (= (+ a b) 2020))
-           (comb/combinations (day1-data path) 2))))
+(comment
+  (defn read-numbers [filename]
+    (->> filename
+         slurp
+         str/split-lines
+         (map #(Integer/parseInt %)))))
 
-(let [[a b] (day1-p1 "resources/day1-input")]
-  (* a b))
+(defn two-thousand-tuple [n numbers]
+  (->> (comb/combinations numbers n)
+       (filter #(= (apply + %) 2020))
+       first))
 
-(defn day1-p2 [path]
-  (first
-   (filter (fn [[a b c]] (= (+ a b c) 2020))
-           (comb/combinations (day1-data path) 3))))
+(defn day1 [filename n]
+  (->> filename
+       read-numbers
+       (two-thousand-tuple n)
+       (apply *)))
 
-(let [[a b c] (day1-p2 "resources/day1-input")]
-  (* a b c))
+(day1 FILE 2)
+(day1 FILE 3)
