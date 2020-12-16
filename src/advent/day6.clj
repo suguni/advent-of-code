@@ -4,15 +4,13 @@
 
 (def F "resources/day6-input")
 
-(defn parse [filename]
-  (with-open [rdr (io/reader filename)]
+(defn load-data [filename]
+  (with-open [rdr (io/reader F)]
     (->> rdr
          line-seq
-         (reduce (fn [acc line]
-                   (if (str/blank? line)
-                     (conj acc [])
-                     (conj (pop acc) (conj (last acc) (set line)))))
-                 [[]]))))
+         (partition-by empty?)
+         (remove #(str/blank? (first %)))
+         vec)))
 
 (defn count-question1 [group]
   (->> group
@@ -22,7 +20,8 @@
 
 (defn solve [filename counter]
   (->> filename
-       parse
+       load-data
+       (map (fn [lst] (map set lst)))
        (map counter)
        (apply +)))
 
