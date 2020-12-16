@@ -5,7 +5,7 @@
 (def F "resources/day6-input")
 
 (defn load-data [filename]
-  (with-open [rdr (io/reader F)]
+  (with-open [rdr (io/reader filename)]
     (->> rdr
          line-seq
          (partition-by empty?)

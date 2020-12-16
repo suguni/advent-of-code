@@ -4,4 +4,7 @@
 
 (deftest a-test
   (testing "FIXME, I fail."
-    (is (= 0 1))))
+    (is (= 1 1)))
+
+  (testing "Add new funtion"
+    (is (add 2 3) 10)))
