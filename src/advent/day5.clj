@@ -40,7 +40,7 @@
 (defn part1 []
   (apply max (seat-ids FILENAME)))
 
-(defn part2
+(defn part2 []
   (let [ordered-seats (sort (seat-ids FILENAME))]
     (->>  (map vector (rest ordered-seats) ordered-seats)
           (map (fn [[a b]] [(- a b) b]))
