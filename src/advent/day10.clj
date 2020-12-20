@@ -29,15 +29,17 @@
        (partition 2 1)
        (map (fn [[a b]] (- b a)))))
 
+(defn part1 [data]
+  (->> data
+       diffs
+       frequencies))
+
 (defn solve-part1 [filename]
   (->> filename
        load-data
-       diffs
-       frequencies
+       part1
        vals
        (apply *)))
-
-(solve-part1 F)
 
 (defn under-3-pair [v as]
   (->> (range 1 (inc (count as)))
