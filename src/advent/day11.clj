@@ -1,14 +1,14 @@
 (ns advent.day11
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 (def F "resources/day11-input.txt")
 
-(defn create-layout [rows cols seats]
+(defn create-layout [seats rows cols]
   {:seats seats :rows rows :cols cols})
 
 (defn get-cell [layout [row col]]
-  (let [pos (+ (* row (:cols layout))
-               col)]
+  (let [pos (+ (* row (:cols layout)) col)]
     (nth (:seats layout) pos)))
 
 (defn adjacency [layout [row col :as coord]]
@@ -37,7 +37,7 @@
 (defn update-one [seat occupied]
   (cond
     (and (= seat :L) (= occupied 0)) :#
-    (and (= seat :#) (>= occupied 4)) :L
+    (and (= seat :#) (>= occupied 5)) :L
     :else seat))
 
 (defn adj [seats rows cols row col]
@@ -49,35 +49,61 @@
         topidx (- offset cols)
         botidx (+ offset cols)
 
-        lt (if (or (= row 0) (= col 0)) 0 (nth seats (- topidx 1)))
-        ct (if (= row 0) 0 (nth seats topidx))
-        rt (if (or (= row 0) (= col cc)) 0 (nth seats (+ topidx 1)))
+        lt (if (or (= row 0) (= col 0)) 0 (if (= :# (nth seats (- topidx 1))) 1 0))
+        ct (if (= row 0) 0 (if (= :# (nth seats topidx)) 1 0))
+        rt (if (or (= row 0) (= col cc)) 0 (if (= :# (nth seats (+ topidx 1))) 1 0))
 
-        lm (if (= col 0) 0  (nth seats (- offset 1)))
+        lm (if (= col 0) 0 (if (= :# (nth seats (- offset 1))) 1 0))
         cm 0  ;; (nth seats offset)
-        rm (if (= col cc) 0 (nth seats (+ offset 1)))
+        rm (if (= col cc) 0 (if (= :# (nth seats (+ offset 1))) 1 0))
 
-        lb (if (or (= col 0) (= row rr)) 0 (nth seats (- botidx 1)))
-        cb (if (= row rr) 0  (nth seats botidx))
-        rb (if (or (= col cc) (= row rr)) 0  (nth seats (+ botidx 1)))]
+        lb (if (or (= col 0) (= row rr)) 0 (if (= :# (nth seats (- botidx 1))) 1 0))
+        cb (if (= row rr) 0 (if (= :# (nth seats botidx)) 1 0))
+        rb (if (or (= col cc) (= row rr)) 0  (if (= :# (nth seats (+ botidx 1))) 1 0))]
     (+ lt ct rt lm cm rm lb cb rb)))
 
+(defn first-meet [seats cols coords]
+  (->> coords
+       (map (fn [[row col]]
+              (nth seats (+ (* row cols) col))))
+       (drop-while #(= % :.))
+       first))
+
+(first-meet [:. :. :L :#] 4 [[0 0] [0 1] [0 2] [0 3]])
+
+(defn adj2 [seats rows cols row col]
+  (let [d1 (map vector (map dec (range row 0 -1)) (map dec (range col 0 -1)))
+        d2 (map #(vector % col) (map dec (range row 0 -1)))
+        d3 (map vector (map dec (range row 0 -1)) (range (inc col) cols))
+        d4 (map #(vector row %) (range (inc col) cols))
+        d5 (map vector (range (inc row) rows) (range (inc col) cols))
+        d6 (map #(vector % col) (range (inc row) rows))
+        d7 (map vector (range (inc row) rows) (map dec (range col 0 -1)))
+        d8 (map #(vector row %) (map dec (range col 0 -1)))
+        adjs [(first-meet seats cols d1)
+              (first-meet seats cols d2)
+              (first-meet seats cols d3)
+              (first-meet seats cols d4)
+              (first-meet seats cols d5)
+              (first-meet seats cols d6)
+              (first-meet seats cols d7)
+              (first-meet seats cols d8)]]
+    (->> adjs
+         (filter #(= :# %))
+         count)))
 
 (defn occupied-map [{:keys [seats rows cols]}]
   (println "occupied-map")
-  (let [seats (map #(if (= % :#) 1 0) seats)]
-    (for [r (range rows)
-          c (range cols)]
-      (adj seats rows cols r c))))
-
-(occupied-map (create-layout 3 3 [:# :# :#
-                                  :L :# :L
-                                  :# :# :#]))
+  (for [r (range rows)
+        c (range cols)]
+    (adj2 seats rows cols r c)))
 
 (defn update-occ-map [layout]
   (println "update-occ-map")
-  (assoc layout :seats
-         (map update-one (:seats layout) (occupied-map layout))))
+  (->> layout
+       occupied-map
+       (map update-one (:seats layout))
+       (assoc layout :seats)))
 
 (defn update-cell [layout coord]
   (let [seat (get-cell layout coord)
@@ -90,7 +116,7 @@
         coords (for [r (range rows) c (range cols)] [r c])]
     (->> coords
          (map #(update-cell layout %))
-         (create-layout rows cols))))
+         (assoc layout :seats))))
 
 (defn layout-changed? [{s1 :seats} {s2 :seats}]
   (->> (map not= s1 s2)
@@ -104,53 +130,56 @@
        first
        first))
 
-(defn load-data [filename]
+(defn load-seq [lines]
+  (let [rows (count lines)
+        cols (count (first lines))]
+    (->> lines
+         (apply concat)
+         (map #(keyword (str %)))
+         (create-layout rows cols))))
+
+(defn load-file [filename]
   (with-open [rdr (io/reader filename)]
-    (let [ls (->> rdr
-                  line-seq
-                  vec)
-          rows (count ls)
-          cols (count (first ls))]
-      (->> ls
-           (apply concat)
-           (map #(keyword (str %)))
-           (create-layout rows cols)))))
+    (->> rdr
+         line-seq
+         load-seq)))
 
-(def input1-rows 10)
-(def input1-cols 10)
-(def input1-1 "L.LL.LL.LLLLLLLLL.LLL.L.L..L..LLLL.LL.LLL.LL.LL.LLL.LLLLL.LL..L.L.....LLLLLLLLLLL.LLLLLL.LL.LLLLL.LL")
-(def input1-2 "#.##.##.#########.###.#.#..#..####.##.###.##.##.###.#####.##..#.#.....###########.######.##.#####.##")
-(def input1-3 "#.LL.L#.###LLLLLL.L#L.L.L..L..#LLL.LL.L##.LL.LL.LL#.LLLL#.##..L.L.....#LLLLLLLL##.LLLLLL.L#.#LLLL.##")
+(def d1 ".......#.
+...#.....
+.#.......
+.........
+..#L....#
+....#....
+.........
+#........
+...#.....")
 
-(def input11-layout
-  (->> input1-1
-       (map #(keyword (str %)))
-       (create-layout input1-rows input1-cols)))
+(defn load-string [s]
+  (->> s
+       str/split-lines
+       load-seq))
 
-(def input12-layout
-  (->> input1-2
-       (map #(keyword (str %)))
-       (create-layout input1-rows input1-cols)))
+(defn run-very-slow-part1 [filename]
+  (let [evolved (-> filename
+                    load-file
+                    evolve)]
+    evolved))
 
-(def input13-layout
-  (->> input1-3
-       (map #(keyword (str %)))
-       (create-layout input1-rows input1-cols)))
+;; (def p2-evolved (run-very-slow-part1 F))
+;; (print p2-evolved)
+;; (occupied p2-evolved) answer 1863
+(def small-data "L.LL.LL.LL
+LLLLLLL.LL
+L.L.L..L..
+LLLL.LL.LL
+L.LL.LL.LL
+L.LLLLL.LL
+..L.L.....
+LLLLLLLLLL
+L.LLLLLL.L
+L.LLLLL.LL
+")
 
-(->> input11-layout
-     update-layout
-     update-layout
-     )
-
-(->> input11-layout
+(->> (load-string small-data)
      evolve
      occupied)
-
-(def evolved (-> F
-             load-data
-             evolve))
-
-
-(println)
-
-(occupied evolved)
