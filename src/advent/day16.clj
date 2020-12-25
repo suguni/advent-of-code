@@ -79,9 +79,9 @@ nearby tickets:
 
 (def filename "resources/day16-input.txt")
 
-(let [[rules your nearby :as note] (->> filename
-                                        slurp
-                                        parse-references)
+(let [[rules your _ :as note] (->> filename
+                                   slurp
+                                   parse-references)
       candidates (->> note
                       remove-error-nearby
                       (cons your)
@@ -100,7 +100,7 @@ nearby tickets:
              (recur c2
                     (assoc r i v)))
            r))
-       (filter (fn [[k v]] (<= 0 v 5)))
+       (filter (fn [[_ v]] (<= 0 v 5)))
        (map first)
        (map #(nth your %))
        (apply *)))
