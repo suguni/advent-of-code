@@ -66,13 +66,33 @@
                          str/join)]
     (str plane padded-cube plane)))
 
-(defn cube-neighbors [[sx sy _]]
-  (let [stride (* sx sy)
-        z=0 (for [r [-1 0 1]
-                  c [-1 0 1]] (+ (* r sx) c))
-        z-1 (map #(- % stride) z=0)
-        z+1 (map #(+ % stride) z=0)]
-    (filter #(not (zero? %)) (concat z-1 z=0 z+1))))
+(defn pad-hcube [[sx sy sz _ :as dim] hcube n]
+  (let [[psx psy psz _] (map #(+ % (* n 2)) dim)
+        cube (repeat-str (* psx psy psz n) \.)
+        padded-hcube (->> hcube
+                          (partition-str (* sx sy sz))
+                          (map #(pad-cube [sx sy sz] % n))
+                          str/join)]
+    (str cube padded-hcube cube)))
+
+(pad-hcube [1 1 1 1] "x" 1)
+
+(defn cube-neighbors [[sx sy sz]]
+  (for [z [-1 0 1]
+        y [-1 0 1]
+        x [-1 0 1]
+        :let [r (+ (* z (* sx sy)) (* y sx) x)]
+        :when (not (zero? r))]
+    r))
+
+(defn hcube-neighbors [[sx sy sz sw]]
+  (for [w [-1 0 1]
+        z [-1 0 1]
+        y [-1 0 1]
+        x [-1 0 1]
+        :let [r (+ (* w (* sx sy sz)) (* z (* sx sy)) (* y sx) x)]
+        :when (not (zero? r))]
+    r))
 
 (defn cube-coords [[sx sy sz]]
   (for [z (range 1 (dec sz))
@@ -80,11 +100,18 @@
         x (range 1 (dec sx))]
     (+ (* z (* sx sy)) (* y sx) x)))
 
+(defn hcube-coords [[sx sy sz sw]]
+  (for [w (range 1 (dec sw))
+        z (range 1 (dec sz))
+        y (range 1 (dec sy))
+        x (range 1 (dec sx))]
+    (+ (* w (* sx sy sz)) (* z (* sx sy)) (* y sx) x)))
+
 (defn generate [dim cube]
-  (let [padded (pad-cube dim cube 2)    ; 7x7x7
+  (let [padded (pad-hcube dim cube 2)    ; 7x7x7
         padded-dim (map #(+ 4 %) dim)
-        coords (cube-coords padded-dim)
-        neighbors (cube-neighbors padded-dim)
+        coords (hcube-coords padded-dim)
+        neighbors (hcube-neighbors padded-dim)
         active-counts (fn [i] (->> neighbors
                                    (filter #(= \# (.charAt padded (+ % i))))
                                    ;; (map #(+ i %))
@@ -97,18 +124,29 @@
          (apply str))))
 
 (defn evolve [dim input n]
-  (loop [input (.replaceAll input "\\s+" "")
-         dim dim
-         i 0]
-    (if (= i n)
-      (->> input
-           (filter #(= % \#))
-           count)
-      (recur (generate dim input)
-             (map #(+ % 2) dim)
-             (inc i)))))
+  (let [st (System/currentTimeMillis)]
+    (loop [input (.replaceAll input "\\s+" "")
+           dim dim
+           i 0
+           t st]
 
-(evolve [3 3 3] e 5)
-(evolve [8 8 1] s 6)
+      (println (str "[" i "] " (- t st) "ms " dim))
+
+      (if (= i n)
+        (->> input
+             (filter #(= % \#))
+             count)
+        (recur (generate dim input)
+               (mapv #(+ % 2) dim)
+               (inc i)
+               (System/currentTimeMillis))))))
+
+
+(vector [1 2 3])
+;; (evolve [3 3 1 1] ".#...####" 6)
+
+;; (evolve [3 3 3] e 5)
+;; (evolve [8 8 1] s 6)
 
 ;;;  213
+24
