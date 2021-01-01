@@ -124,19 +124,6 @@ Tile 3079:
 ..#.......
 ..#.###...")
 
-(comment
-  (defn transform-block [block]
-    (let [lines (str/split-lines block)
-          left (map first lines)
-          top (seq (first lines))
-          right (map #(nth % 9) lines)
-          bottom (seq (last lines))]
-      (->> [left top right bottom]
-           (map (fn [line]
-                  (->> line
-                       (map #(if (= \# %) 1 0))
-                       (reduce (fn [acc n] (+ (* acc 2) n))))))))))
-
 (defn parse-data [s]
   (->> s
        str/trim
@@ -165,11 +152,6 @@ Tile 3079:
                 (take 4))]
     (concat rt vt)))
 
-(->> ["abc"
-      "def"
-      "ghi"]
-     comb-tile)
-
 (def data (->> ex1
                parse-data))
 
@@ -184,9 +166,6 @@ Tile 3079:
         bottom (last tile)]
     [left top right bottom]))
 
-(->> (data 2311)
-     edges)
-
 (defn matching-edge? [t1 t2]
   (let [[t1l t1t t1r t1b] (edges t1)
         [t2l t2t t2r t2b] (edges t2)]
@@ -200,15 +179,9 @@ Tile 3079:
        comb-tile
        (some #(matching-edge? t1 %))))
 
-(matching-tile? (data 2311) (data 3079))
-
 (def input (->> "resources/day20-input.txt"
                 slurp
                 parse-data))
-
-(->> #{1 2}
-     (map #(get {1 "a" 2 "b" 3 "c"} %)))
-
 
 (defn part1 [data]
   (let [m-matching-tile? (memoize
@@ -245,21 +218,6 @@ Tile 3079:
        (map (fn [t] [(matching-edge t1 t) t]))
        (filter first)
        first))
-
-(defn part2 [data]
-  (let [data data
-        result []]
-    (->> data
-         (filter (fn [[key tile]]
-                   (->> data
-                        (filter (fn [[k t]]
-                                  (and (not= k key)
-                                       (matching-tile tile t))))
-                        count
-                        (= 2))))
-         )))
-
-((comp not nil? second) [1 1])
 
 (let [data (seq data)
       [fid ftile] (first data)
@@ -442,22 +400,13 @@ Tile 3079:
                   (map #(apply map vector %))
                   (reduce into []))
         match? (every? match-monster-dot? dots)]
-    match?
-    ;; (if match?
-    ;;   (->> dots
-    ;;        (filter match-sea-dot?)
-    ;;        count)
-    ;;   0)
-    ))
+    match?))
 
 (def sea ["####              # "
           "#    ##    ##    ###"
           " #  #  #  #  #  #   "])
 
 (rough-count monster sea)
-
-(apply map vector  (map vector m m))
-(rough-count m m)
 
 (defn dot-count [tile]
   (->> tile
