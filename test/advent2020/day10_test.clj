@@ -1,5 +1,5 @@
-(ns advent.day10-test
-  (:require [advent.day10 :as sut]
+(ns advent2020.day10-test
+  (:require [advent2020.day10 :as sut]
             [clojure.test :as t]))
 
 

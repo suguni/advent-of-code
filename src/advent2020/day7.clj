@@ -1,8 +1,8 @@
-(ns advent.day7
+(ns advent2020.day7
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))
 
-(def F "resources/day7-input")
+(def F "resources/2020/day7-input.txt")
 
 (def re-rule-bag #"^(\w+ \w+) bags contain ")
 

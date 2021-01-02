@@ -1,8 +1,8 @@
-(ns advent.day8
+(ns advent2020.day8
   (:require [clojure.java.io :as io]))
 
 
-(def F "resources/day8-input")
+(def F "resources/2020/day8-input.txt")
 
 (def init-state { :PC 0 :A 0 })
 

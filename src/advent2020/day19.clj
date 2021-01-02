@@ -1,4 +1,4 @@
-(ns advent.day19
+(ns advent2020.day19
   (:require [clojure.string :as str]
             [clojure.set :as set]))
 
@@ -75,7 +75,7 @@ aaaabbb
 ;;     book))
 
 
-(def filename "resources/day19-input.txt")
+(def filename "resources/2020/day19-input.txt")
 
 (let [[b m] (load-data example)]
   (def book b)

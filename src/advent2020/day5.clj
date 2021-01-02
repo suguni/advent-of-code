@@ -1,7 +1,7 @@
-(ns advent.day5
+(ns advent2020.day5
   (:require [clojure.java.io :as io]))
 
-(def FILENAME "resources/day5-input")
+(def FILENAME "resources/2020/day5-input.txt")
 
 (defn seat-id [row col]
   (+ (* row 8) col))

@@ -1,8 +1,8 @@
-(ns advent.day6
+(ns advent2020.day6
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))
 
-(def F "resources/day6-input")
+(def F "resources/2020/day6-input.txt")
 
 (defn load-data [filename]
   (with-open [rdr (io/reader filename)]

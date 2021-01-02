@@ -1,4 +1,4 @@
-(ns advent.day21
+(ns advent2020.day21
   (:require [clojure.string :as str]
             [clojure.set :as set]))
 
@@ -111,8 +111,9 @@ sqjhc mxmxvkd sbzzf (contains fish)
          (map count)
          (apply +))))
 
+(def FILENAME "resources/2020/day21-input.txt")
 
-(->> (slurp "resources/day21-input.txt")
+(->> (slurp FILENAME)
      str/trim
      solve-part1)
 
@@ -129,7 +130,8 @@ sqjhc mxmxvkd sbzzf (contains fish)
          (map second)
          (str/join ","))))
 
-(->> (slurp "resources/day21-input.txt")
+(->> (slurp FILENAME)
      str/trim
      solve-part2)
+
 "prxmdlz,ncjv,knprxg,lxjtns,vzzz,clg,cxfz,qdfpq"

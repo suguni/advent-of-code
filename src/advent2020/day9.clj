@@ -1,4 +1,4 @@
-(ns advent.day9
+(ns advent2020.day9
   (:require [clojure.math.combinatorics :as comb]
             [clojure.java.io :as io]))
 
@@ -25,7 +25,7 @@
          (map #(Long/parseLong %))
          vec)))
 
-(def F "resources/day9-input.txt")
+(def F "resources/2020/day9-input.txt")
 
 ;; (load-data F)
 

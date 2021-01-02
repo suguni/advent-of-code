@@ -1,5 +1,5 @@
-(ns advent.day11-test
-  (:require [advent.day11 :as s]
+(ns advent2020.day11-test
+  (:require [advent2020.day11 :as s]
             [clojure.test :refer [deftest is]]))
 
 (def layout1 (s/create-layout 3 3 (repeat 9 :L)))

@@ -1,5 +1,5 @@
-(ns advent.day9-test
-  (:require [advent.day9 :as sut]
+(ns advent2020.day9-test
+  (:require [advent2020.day9 :as sut]
             [clojure.test :as t]))
 
 (t/deftest check-contain-sum-of-two

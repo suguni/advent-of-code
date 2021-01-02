@@ -1,4 +1,4 @@
-(ns advent.day12
+(ns advent2020.day12
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))
 
@@ -68,7 +68,7 @@ F11")
     (move2 [:F 7])
     (move2 [:R 90]))
 
-(def F "resources/day12-input.txt")
+(def F "resources/2020/day12-input.txt")
 
 (defn parse-line [line]
   (let [action (.substring line 0 1)

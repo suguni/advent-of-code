@@ -1,4 +1,4 @@
-(ns advent.day20
+(ns advent2020.day20
   (:require [clojure.string :as str]))
 
 (defn split [re s]
@@ -179,7 +179,7 @@ Tile 3079:
        comb-tile
        (some #(matching-edge? t1 %))))
 
-(def input (->> "resources/day20-input.txt"
+(def input (->> "resources/2020/day20-input.txt"
                 slurp
                 parse-data))
 

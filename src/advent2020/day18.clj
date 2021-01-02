@@ -1,8 +1,8 @@
-(ns advent.day18
+(ns advent2020.day18
   (:require [clojure.string :as str]))
 
 (def input
-  (->> (slurp "resources/day18-input.txt")
+  (->> (slurp "resources/2020/day18-input.txt")
        str/trim
        str/split-lines))
 

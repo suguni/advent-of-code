@@ -1,4 +1,4 @@
-(ns advent.day15)
+(ns advent2020.day15)
 
 (def numbers [0 3 6])
 

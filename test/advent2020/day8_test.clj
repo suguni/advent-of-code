@@ -1,5 +1,5 @@
-(ns advent.day8-test
-  (:require [advent.day8 :as sut]
+(ns advent2020.day8-test
+  (:require [advent2020.day8 :as sut]
             [clojure.test :as t]))
 
 (t/deftest machine-run

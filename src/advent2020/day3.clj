@@ -1,7 +1,7 @@
-(ns advent.day3
+(ns advent2020.day3
   (:require [clojure.string :as str]))
 
-(def FILE "resources/day3-input")
+(def FILE "resources/2020/day3-input.txt")
 
 (defn load-tile [filename]
   (-> filename
@@ -29,7 +29,7 @@
         coords (slope-coords slope [width height])]
     (tree-encounter tile coords)))
 
-(tree-encounter-at "resources/day3-input" [3 1])
+(tree-encounter-at FILE [3 1])
 
 (->> [[1 1] [3 1] [5 1] [7 1] [1 2]]
     (map #(tree-encounter-at FILE %))

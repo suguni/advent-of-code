@@ -1,4 +1,4 @@
-(ns advent.day16
+(ns advent2020.day16
   (:require [clojure.string :as str]
             [clojure.java.io :as io]))
 
@@ -77,7 +77,7 @@ nearby tickets:
        (map #(common-rules rules %))))
 
 
-(def filename "resources/day16-input.txt")
+(def filename "resources/2020/day16-input.txt")
 
 (let [[rules your _ :as note] (->> filename
                                    slurp

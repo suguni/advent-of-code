@@ -1,4 +1,4 @@
-(ns advent.day14
+(ns advent2020.day14
   (:require [clojure.string :as str]
             [clojure.java.io :as io]))
 
@@ -31,7 +31,7 @@
 
 (run {} "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X" [[8 11] [7 101] [8 0]])
 
-(def F "resources/day14-input.txt")
+(def F "resources/2020/day14-input.txt")
 
 (def instructions [])
 

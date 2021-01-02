@@ -1,9 +1,9 @@
-(ns advent.day4
+(ns advent2020.day4
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.set :as set]))
 
-(def filename "resources/day4-input")
+(def filename "resources/2020/day4-input.txt")
 
 (defn concat-str [a b]
   (if (= a "") b (str a " " b)))

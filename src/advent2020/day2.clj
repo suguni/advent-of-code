@@ -1,4 +1,4 @@
-(ns advent.day2
+(ns advent2020.day2
   (:require [clojure.string :as str]))
 
 (defn read-line [line]
@@ -32,5 +32,5 @@
       (filter match-policy?)
       count))
 
-(day2 "resources/day2-input" policy1?)
-(day2 "resources/day2-input" policy2?)
+(day2 "resources/2020/day2-input.txt" policy1?)
+(day2 "resources/2020/day2-input.txt" policy2?)

@@ -1,4 +1,4 @@
-(ns advent.day17
+(ns advent2020.day17
   (:require
             [clojure.string :as str]))
 

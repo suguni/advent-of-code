@@ -1,8 +1,8 @@
-(ns advent.day11
+(ns advent2020.day11
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))
 
-(def F "resources/day11-input.txt")
+(def F "resources/2020/day11-input.txt")
 
 (defn create-layout [seats rows cols]
   {:seats seats :rows rows :cols cols})
@@ -180,6 +180,6 @@ L.LLLLLL.L
 L.LLLLL.LL
 ")
 
-(->> (load-string small-data)
-     evolve
-     occupied)
+;; (->> (load-string small-data)
+;;      evolve
+;;      occupied)

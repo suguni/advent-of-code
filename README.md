@@ -1,5 +1,5 @@
-# Advent of Code 2020
+# Advent of Code
 
-My clojure solutions.
+clojure solutions.
 
 https://adventofcode.com/
