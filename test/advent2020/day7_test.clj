@@ -1,6 +1,6 @@
-(ns advent.day7-test
+(ns advent2020.day7-test
   (:require  [clojure.test :refer :all]
-             [advent.day7 :refer :all]))
+             [advent2020.day7 :refer :all]))
 
 
 (deftest rule-match
