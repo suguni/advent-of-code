@@ -1,10 +1,7 @@
 #![allow(dead_code)]
 
-use std::fs::File;
-use std::io::Read;
-use std::io::Write;
-
 use regex::Regex;
+use super::*;
 
 /*
 처음에는 정규식으로 케이스들을 치환한 후 카운트 하였으나 계속 실패
@@ -14,18 +11,6 @@ replace 할 때 중복되는 케이스들이 존재하기 때문인것으로 판
 \\x123 이런 경우 \\->\ 로 변경 된 결과를 다시 hex -> char 변경하면 결국 한문자만 남음
 하지만 이 경우는 \x123 이 최종 결과이어야 함.
  */
-
-fn read_file(filename: &str) -> String {
-    let mut f = File::open(filename).expect("file not found");
-    let mut contents = String::new();
-    f.read_to_string(&mut contents).expect("read error");
-    contents
-}
-
-fn write_file(filename: &str, text: &str) {
-    let mut file = File::create(filename).expect("cannot create file");
-    write!(file, "{}", text).expect("write error");
-}
 
 fn unescape(text: &str) -> String {
     let mut unescaped = strip_quote(text);
