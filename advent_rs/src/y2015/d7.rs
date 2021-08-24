@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::collections::{HashMap, VecDeque};
 use std::fs::File;
 use std::io::Read;
@@ -181,7 +183,7 @@ NOT y -> i";
 
     #[test]
     fn run_quiz1() {
-        let mut program = load_program_from_file("input7.txt");
+        let mut program = load_program_from_file("../data/2015/input7.txt");
         let result: HashMap<String, u16> = execute_program(&mut program);
         assert_eq!(result.get("a"), Some(&46065));
     }
@@ -189,7 +191,7 @@ NOT y -> i";
     #[test]
     fn run_qui2() {
         // 1674 -> b
-        let mut program = load_program_from_file("input7.txt");
+        let mut program = load_program_from_file("../data/2015/input7.txt");
         for (key, expr) in &mut program {
             if key == "b" {
                 *expr = Expr::Val(46065);
