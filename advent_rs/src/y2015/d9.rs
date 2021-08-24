@@ -86,15 +86,29 @@ mod tests {
 
         let max_dist = all_paths(&locations)
             .iter()
-            .map(|path| {
-                let dist = calc_dist(&items, &path);
-                // println!("{} : {:?}", dist, path);
-                dist
-            })
+            .map(|path| calc_dist(&items, &path))
             .min()
             .unwrap();
 
         assert_eq!(207, max_dist);
+    }
+
+    #[test]
+    fn quiz2() {
+        let items: Vec<(String, String, i32)> = read_file("../data/2015/input9.txt")
+            .lines()
+            .map(|line| parse_line(line))
+            .collect();
+
+        let locations = collect_locations(&items);
+
+        let max_dist = all_paths(&locations)
+            .iter()
+            .map(|path| calc_dist(&items, &path))
+            .max()
+            .unwrap();
+
+        assert_eq!(804, max_dist);
     }
 
     #[test]
