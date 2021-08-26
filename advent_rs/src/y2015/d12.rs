@@ -97,27 +97,19 @@ fn remove_red_object(text: &str) -> String {
     let mut result = String::from(text);
     let mut start = 0;
 
-    loop {
-        if start == result.len() {
-            break;
-        }
+    while let Some(m) = re.find(&result[start..]) {
+        let ms = m.start() + start;
+        let me = m.end() + start;
 
-        if let Some(m) = re.find(&result[start..]) {
-            let ms = m.start() + start;
-            let me = m.end() + start;
-
-            if let Some(ss) = find_open_curl_brace(&result, ms) {
-                if let Some(es) = find_close_curl_brace(&result, me) {
-                    result.replace_range(ss..es + 1, "");
-                    start = ss;
-                } else {
-                    panic!("Invalid format {}", result);
-                }
+        if let Some(ss) = find_open_curl_brace(&result, ms) {
+            if let Some(es) = find_close_curl_brace(&result, me) {
+                result.replace_range(ss..es + 1, "");
+                start = ss;
             } else {
-                start = me;
+                panic!("Invalid format {}", result);
             }
         } else {
-            break;
+            start = me;
         }
     }
 
