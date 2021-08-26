@@ -1,30 +1,8 @@
 #![allow(dead_code)]
 
+use super::*;
 use std::collections::HashSet;
 use regex::Regex;
-
-fn all_paths<T: Eq + Clone + std::hash::Hash>(locs: &HashSet<T>) -> HashSet<Vec<T>> {
-    let mut result = HashSet::new();
-
-    if locs.is_empty() {
-        result.insert(Vec::new());
-        return result;
-    }
-
-    for elem in locs {
-        let mut sub_locs = locs.clone();
-        sub_locs.remove(elem);
-
-        let sub_paths = all_paths(&sub_locs);
-
-        for mut sub_path in sub_paths {
-            sub_path.insert(0, elem.clone());
-            result.insert(sub_path);
-        }
-    }
-
-    result
-}
 
 fn parse_line(line: &str) -> (String, String, i32) {
     let re = Regex::new(r"^(.+) to (.+) = (\d+)").unwrap();
@@ -33,15 +11,6 @@ fn parse_line(line: &str) -> (String, String, i32) {
     let to = String::from(&cas[2]);
     let dist = (&cas[3]).parse::<i32>().unwrap();
     (from, to, dist)
-}
-
-fn collect_locations(items: &Vec<(String, String, i32)>) -> HashSet<String> {
-    let mut result = HashSet::new();
-    for (n1, n2, _) in items {
-        result.insert(n1.clone());
-        result.insert(n2.clone());
-    }
-    result
 }
 
 fn calc_dist(items: &Vec<(String, String, i32)>, path: &Vec<String>) -> i32{
@@ -82,9 +51,9 @@ mod tests {
             .map(|line| parse_line(line))
             .collect();
 
-        let locations = collect_locations(&items);
+        let locations = collect_keys(&items);
 
-        let max_dist = all_paths(&locations)
+        let max_dist = permutations(&locations)
             .iter()
             .map(|path| calc_dist(&items, &path))
             .min()
@@ -100,9 +69,9 @@ mod tests {
             .map(|line| parse_line(line))
             .collect();
 
-        let locations = collect_locations(&items);
+        let locations = collect_keys(&items);
 
-        let max_dist = all_paths(&locations)
+        let max_dist = permutations(&locations)
             .iter()
             .map(|path| calc_dist(&items, &path))
             .max()
@@ -146,7 +115,7 @@ mod tests {
         expected.insert("Tristram".to_string());
         expected.insert("Norrath".to_string());
 
-        assert_eq!(expected, collect_locations(&items));
+        assert_eq!(expected, collect_keys(&items));
     }
 
     #[test]
@@ -156,7 +125,7 @@ mod tests {
         locations.insert("b".to_string());
         locations.insert("c".to_string());
 
-        let paths = all_paths(&locations);
+        let paths = permutations(&locations);
         let mut expected = HashSet::new();
         expected.insert(vec!["a".to_string(), "b".to_string(), "c".to_string()]);
         expected.insert(vec!["a".to_string(), "c".to_string(), "b".to_string()]);
@@ -174,7 +143,7 @@ mod tests {
         locations.insert(1);
         locations.insert(2);
 
-        let paths = all_paths(&locations);
+        let paths = permutations(&locations);
         let mut expected = HashSet::new();
         expected.insert(vec![1, 2]);
         expected.insert(vec![2, 1]);
