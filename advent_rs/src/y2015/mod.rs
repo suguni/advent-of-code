@@ -5,6 +5,7 @@ mod d8;
 mod d9;
 mod d10;
 mod d11;
+mod d12;
 
 use std::fs::File;
 use std::io::Read;
