@@ -41,49 +41,39 @@ fn calc_score(ingredients: &Vec<Ingredient>, weights: Vec<i32>) -> (i32, i32) {
         sum[0].max(0) * sum[1].max(0) * sum[2].max(0) * sum[3].max(0),
         cal
     )
+}
 
+fn list_of_weights() -> impl std::iter::Iterator<Item=(i32, i32, i32, i32)> {
+    (0..=100)
+        .flat_map(|i| (0..=(100 - i))
+            .flat_map(move |j| (0..=(100 - i - j))
+                .flat_map(move |k| (0..=(100 - i - j - k))
+                    .map(move |l| (i, j, k, l)))))
+        .filter(|(i, j, k, l)| i + j + k + l == 100)
 }
 
 fn max_score(ingredients: &Vec<Ingredient>) -> i32 {
-    let mut max = 0;
-
-    for a in 0..100 {
-        for b in 0..100 {
-            for c in 0..100 {
-                for d in 0..100 {
-                    if a + b + c + d == 100 {
-                        let (c, _cal) = calc_score(ingredients, vec![a, b, c, d]);
-                        if c > max {
-                            max = c;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    max
+    list_of_weights()
+        .map(|(i, j, k, l)| {
+            let (c, _cal) = calc_score(ingredients, vec![i, j, k, l]);
+            c
+        })
+        .max()
+        .unwrap()
 }
 
 fn max_score2(ingredients: &Vec<Ingredient>) -> i32 {
-    let mut max = 0;
-
-    for a in 0..100 {
-        for b in 0..100 {
-            for c in 0..100 {
-                for d in 0..100 {
-                    if a + b + c + d == 100 {
-                        let (c, cal) = calc_score(ingredients, vec![a, b, c, d]);
-                        if cal == 500 && c > max {
-                            max = c;
-                        }
-                    }
-                }
+    list_of_weights()
+        .filter_map(|(i, j, k, l)| {
+            let (c, cal) = calc_score(ingredients, vec![i, j, k, l]);
+            if cal == 500 {
+                Some(c)
+            } else {
+                None
             }
-        }
-    }
-
-    max
+        })
+        .max()
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -98,23 +88,21 @@ mod tests {
 
     #[test]
     fn quiz1() {
-        let ingredients: Vec<Ingredient> =
-            read_file("../data/2015/input15.txt")
-                .lines()
-                .map(|line| parse_line(line))
-                .collect();
-
+        let ingredients = load_ingredients(&read_file("../data/2015/input15.txt"));
         assert_eq!(max_score(&ingredients), 18965440);
     }
 
     #[test]
     fn quiz2() {
-        let ingredients: Vec<Ingredient> =
-            read_file("../data/2015/input15.txt")
-                .lines()
-                .map(|line| parse_line(line))
-                .collect();
-
+        let ingredients = load_ingredients(&read_file("../data/2015/input15.txt"));
         assert_eq!(max_score2(&ingredients), 15862900);
+    }
+
+    #[test]
+    fn test_flat_map() {
+        assert_eq!(
+            (0..2).flat_map(|i| (0..2).map(move |j| (i, j))).collect::<Vec<(i32, i32)>>(),
+            vec![(0, 0), (0, 1), (1, 0), (1, 1)]
+        );
     }
 }
