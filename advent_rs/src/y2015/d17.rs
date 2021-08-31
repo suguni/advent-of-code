@@ -1,5 +1,7 @@
 use super::*;
 
+// TODO Iterator implementations
+
 // https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book-Z-H-11.html#%_idx_728
 
 fn combinations_n(amount: i32, coins: &Vec<i32>) -> usize {
