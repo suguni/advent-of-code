@@ -3,6 +3,9 @@
 use super::*;
 use regex::Regex;
 
+// https://www.reddit.com/r/adventofcode/comments/3xflz8/day_19_solutions/
+// 이 힌트가 없었으면 절대 풀지 못했을 것이다.
+
 fn format_molecule(molecule: &str) -> String {
     molecule.replace("Rn", "(")
         .replace("Y", ",")
