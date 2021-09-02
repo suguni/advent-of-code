@@ -1,5 +1,13 @@
+#![allow(non_snake_case)]
+
 use super::*;
 use regex::Regex;
+
+fn format_molecule(molecule: &str) -> String {
+    molecule.replace("Rn", "(")
+        .replace("Y", ",")
+        .replace("Ar", ")")
+}
 
 fn load_data(contents: &str) -> (Vec<(&str, &str)>, &str) {
     let mut lines = contents.lines();
@@ -19,18 +27,104 @@ fn load_data(contents: &str) -> (Vec<(&str, &str)>, &str) {
     (replacements, lines.next().unwrap())
 }
 
-/*fn tokenize_molecules(molecules: &str) -> Vec<&str> {
+fn load_data_q2(contents: &str) -> (Vec<(String, Vec<String>)>, Vec<String>) {
+    let (replacements, molecules) = load_data(contents);
+
+    let replacements: Vec<(String, Vec<String>)> = replacements
+        .iter()
+        .map(|(key, vals)| {
+            (key.to_string(),
+             tokenize_molecules(vals))
+        })
+        .collect();
+
+    let molecules = tokenize_molecules(molecules);
+
+    (replacements, molecules)
+}
+
+fn tokenize_molecules(molecules: &str) -> Vec<String> {
     molecules
         .chars()
-        .scan('_', |a, b| {
-            if char::is_ascii_uppercase() {
-
+        .fold(Vec::new(), |mut a, b| {
+            if char::is_ascii_uppercase(&b) {
+                a.push(b.to_string());
             } else {
-
+                a.last_mut().unwrap().push(b);
             }
+            a
         })
 }
-*/
+
+fn collapse_simple_inside_RnAr(molecules: &mut Vec<String>,
+                               replacements: &Vec<(String, Vec<String>)>) -> bool {
+    let mut i = molecules.len() - 1;
+    while i > 1 {
+        if molecules[i] == "Ar" || molecules[i] == "Y" {
+            let element = &molecules[i - 2..=i - 1];
+            if let Some((k, _)) = replacements
+                .iter()
+                .find(|(_, elems)| elems == element) {
+                molecules.remove(i - 2);
+                molecules[i - 2] = k.clone();
+                return true;
+            }
+        }
+        i -= 1;
+    }
+    false
+}
+
+fn collapse_simple(molecules: &mut Vec<String>,
+                   replacements: &Vec<(String, Vec<String>)>) -> bool {
+    let mut i = molecules.len() - 1;
+    while i > 0 {
+        let element = &molecules[i - 1..=i];
+        if let Some((k, _)) = replacements
+            .iter()
+            .find(|(_, elems)| elems == element) {
+            molecules.remove(i - 1);
+            molecules[i - 1] = k.clone();
+            return true;
+        }
+        i -= 1;
+    }
+    false
+}
+
+fn find_elements(pos: usize,
+                 molecules: &mut Vec<String>,
+                 replacements: &Vec<(String, Vec<String>)>) -> Option<(usize, usize)> {
+    for (i, (_, elements)) in replacements.iter().enumerate() {
+        let len = elements.len();
+
+        if pos >= (len - 1) {
+            let start = pos - (len - 1);
+            if molecules[start..=pos] == *elements {
+                return Some((start, i));
+            }
+        }
+    }
+    None
+}
+
+fn collapse_RnAr(molecules: &mut Vec<String>,
+                 replacements: &Vec<(String, Vec<String>)>) -> bool {
+    for i in 0..molecules.len() {
+        if molecules[i] == "Ar" {
+            if let Some((start, idx)) = find_elements(i, molecules, replacements) {
+                let (key, elements) = &replacements[idx];
+                for _ in start..start + elements.len() - 1 {
+                    molecules.remove(start);
+                }
+                molecules[start] = key.clone();
+                return true;
+            }
+        }
+    }
+    false
+}
+
 fn replace((key, val): (&str, &str), molecule: &str, reverse: bool) -> HashSet<String> {
     let (key, val) = if reverse { (val, key) } else { (key, val) };
     let key_len = key.len();
@@ -61,112 +155,86 @@ fn replace_all(replacements: &Vec<(&str, &str)>, molecule: &str) -> HashSet<Stri
         .collect()
 }
 
-fn replace_rev_all(replacements: &Vec<(&str, &str)>, molecule: &str) -> HashSet<String> {
-    replacements
-        .iter()
-        .flat_map(|r|
-            replace(*r, molecule, true))
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    // #[test]
-    // fn quiz2_1() {
-    //     let contents = read_file("../data/2015/input19.txt");
-    //     let (replacements, target) = load_data(&contents);
-    //
-    //     let mut molecules: HashSet<String> = HashSet::new();
-    //     molecules.insert(target.to_string());
-    //
-    //     let mut step = 0;
-    //
-    //     let mut found = false;
-    //
-    //     loop {
-    //         step += 1;
-    //
-    //         molecules = molecules
-    //             .iter()
-    //             .flat_map(|m| replace_rev_all(&replacements, m))
-    //             .collect::<HashSet<String>>();
-    //
-    //         let (min, max) = molecules.iter()
-    //             .map(|s| s.len())
-    //             .fold((usize::MAX, usize::MIN),
-    //                   |(min, max), l| {
-    //                       (
-    //                           if l < min { l } else { min },
-    //                           if l > max { l } else { max }
-    //                       )
-    //                   });
-    //
-    //         println!("{} {}/{} {}", step, min, max, molecules.len());
-    //
-    //         if molecules.contains(&"e".to_string()) {
-    //             println!("============= FOUND!!! =============");
-    //             found = true;
-    //             break;
-    //         } else if molecules.len() == 0 {
-    //             break;
-    //         }
-    //     }
-    //
-    //     dbg!(step, found);
-    //
-    //     assert_eq!(step, 0);
-    // }
+    #[test]
+    fn test_collapse_molecules_deep_simple() {
+        let contents = read_file("../data/2015/input19.txt");
+        let (replacements, _) = load_data_q2(&contents);
+        let mut molecules = tokenize_molecules("SiRnTiBPBPMgAr");
 
-    /*#[test]
+        while collapse_simple_inside_RnAr(&mut molecules, &replacements) {
+            // println!("{}", molecules.join(""));
+            // "SiRnTiBPMgAr"
+            // "SiRnTiBFAr"
+            // "SiRnTiMgAr"
+            // "SiRnMgAr"
+        }
+
+        assert_eq!(molecules.join(""), "SiRnMgAr");
+    }
+
+    #[test]
     fn quiz2() {
         let contents = read_file("../data/2015/input19.txt");
-        let (replacements, target) = load_data(&contents);
+        let (replacements, mut molecules) = load_data_q2(&contents);
 
-        let mut molecules: HashSet<String> = HashSet::new();
-        molecules.insert(target.to_string());
+        println!("START {}", format_molecule(&molecules.join("")));
 
         let mut step = 0;
-        let mut found = false;
-
         loop {
-            step += 1;
+            let old = step;
 
-            molecules = molecules
-                .iter()
-                .flat_map(|m| replace_rev_all(&replacements, m))
-                .collect::<HashSet<String>>();
+            while collapse_RnAr(&mut molecules, &replacements) {
+                step += 1;
+                // println!("{} {}", step, format_molecule(&molecules.join("")));
+            }
 
-            let (min, max) = molecules.iter()
-                .map(|s| s.len())
-                .fold((usize::MAX, usize::MIN),
-                      |(min, max), l| {
-                          (
-                              if l < min { l } else { min },
-                              if l > max { l } else { max }
-                          )
-                      });
+            while collapse_simple_inside_RnAr(&mut molecules, &replacements) {
+                step += 1;
+                // println!("{} {}", step, format_molecule(&molecules.join("")));
+            }
 
-            molecules = molecules
-                .into_iter()
-                .filter(|m| m.len() == min)
-                .collect::<HashSet<String>>();
+            if collapse_simple(&mut molecules, &replacements) {
+                step += 1;
+                // println!("{} {}", step, format_molecule(&molecules.join("")));
+            }
 
-            println!("{} {}/{} {}", step, min, max, molecules.len());
-
-            if molecules.contains("e") {
-                println!("============= FOUND!!! =============");
-                found = true;
-                break;
-            } else if molecules.is_empty() {
+            if old == step {
                 break;
             }
         }
 
-        dbg!(step, found);
-        assert_eq!(step, 0);
-    }*/
+        println!("Final {} {}", step, format_molecule(&molecules.join("")));
+        assert_eq!(step, 195);
+    }
+
+    #[test]
+    fn test_collapse_molecules_RnAr() {
+        let mut molecules = tokenize_molecules(
+            "CaSiThCaSiRnFArRnSiRnFArTiTiBFArCaCaSiRnSiThCaCa");
+
+        let replacements = vec![
+            ("P".to_string(), tokenize_molecules("SiRnFAr")),
+        ];
+
+        let mut old = molecules.clone();
+
+        loop {
+            collapse_RnAr(&mut molecules, &replacements);
+
+            if old == molecules {
+                break;
+            } else {
+                old = molecules.clone();
+            }
+        }
+
+        assert_eq!(molecules.join(""),
+                   "CaSiThCaPRnPTiTiBFArCaCaSiRnSiThCaCa")
+    }
 
     #[test]
     fn quiz1() {
