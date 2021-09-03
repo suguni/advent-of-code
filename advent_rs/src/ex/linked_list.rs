@@ -1,3 +1,7 @@
+#![allow(unused_imports)]
+#![allow(unused_mut)]
+#![allow(unused_variables)]
+
 use std::fmt::Debug;
 use std::ops::{DerefMut, Deref};
 use std::borrow::BorrowMut;
