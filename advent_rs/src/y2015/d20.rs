@@ -68,7 +68,6 @@ mod tests {
         // 실패한 결과부터 시도
         let mut house = 776160; // 2
         let (_sum, r) = loop {
-
             let factors = prime_factorize(house);
             let subtraction: i32 = (1..=(house - 1) / 50)
                 .filter(|n| house % n == 0)
@@ -90,7 +89,7 @@ mod tests {
     fn test_sum_of_factors() {
         assert_eq!(sum_of_factors(
             &vec![(2, 2), (3, 3)]
-        ), (2_i32.pow(0)+2_i32.pow(1)+2_i32.pow(2))*(3_i32.pow(0)+3_i32.pow(1)+3_i32.pow(2)+3_i32.pow(3)));
+        ), (2_i32.pow(0) + 2_i32.pow(1) + 2_i32.pow(2)) * (3_i32.pow(0) + 3_i32.pow(1) + 3_i32.pow(2) + 3_i32.pow(3)));
     }
 
     #[test]
@@ -99,7 +98,7 @@ mod tests {
         assert_eq!(prime_factorize(3), vec![(3, 1)]);
         assert_eq!(prime_factorize(4), vec![(2, 2)]);
         assert_eq!(prime_factorize(6), vec![(2, 1), (3, 1)]);
-        assert_eq!(prime_factorize(2*2*3*5), vec![(2, 2), (3, 1), (5, 1)]);
+        assert_eq!(prime_factorize(2 * 2 * 3 * 5), vec![(2, 2), (3, 1), (5, 1)]);
         assert_eq!(prime_factorize(2 * 2 * 2 * 3 * 3 * 5 * 5 * 7 * 7),
                    vec![(2, 3), (3, 2), (5, 2), (7, 2)]);
     }
