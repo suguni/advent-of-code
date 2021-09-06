@@ -97,7 +97,6 @@ fn players() -> Vec<(i32, Player)> {
         }
     }
 
-    result.sort_by(|p1, p2| (*p1).0.cmp(&((*p2).0)));
     result
 }
 
@@ -118,12 +117,12 @@ impl Player {
         let my_attack = (self.damage - other.armor).max(1);
         let other_attack = (other.damage - self.armor).max(1);
 
-        let other_count = other.hit_points / my_attack;
-        let my_count = self.hit_points / other_attack;
+        let other_kill_count = (other.hit_points as f32 / my_attack as f32).ceil() as i32;
+        let my_kill_count = (self.hit_points as f32 / other_attack as f32).ceil() as i32;
 
-        if my_count > other_count {
+        if my_kill_count > other_kill_count {
             true
-        } else if my_count < other_count {
+        } else if my_kill_count < other_kill_count {
             false
         } else {
             let other_rem = other.hit_points % my_attack;
@@ -143,8 +142,10 @@ mod tests {
 
     #[test]
     fn quiz1() {
-        let (c, p) =
-            players()
+        let mut players = players();
+        players.sort_by(|p1, p2| (*p1).0.cmp(&((*p2).0)));
+
+        let (c, p) = players
                 .into_iter()
                 .skip_while(|(_, p)| !p.is_win(&BOSS))
                 .nth(0)
@@ -152,6 +153,21 @@ mod tests {
 
         println!("{} {:?}", c, p);
         assert_eq!(c, 78);
+    }
+
+    #[test]
+    fn quiz2() {
+        let mut players = players();
+        players.sort_by(|p1, p2| (*p2).0.cmp(&((*p1).0)));
+
+        let (c, p) = players
+            .into_iter()
+            .skip_while(|(_, p)| p.is_win(&BOSS))
+            .nth(0)
+            .unwrap();
+
+        println!("{} {:?}", c, p);
+        assert_eq!(c, 148);
     }
 
     #[test]
@@ -172,6 +188,10 @@ mod tests {
 
     #[test]
     fn test_win() {
+        let you = Player { hit_points: 100, damage: 9, armor: 0, items: "W1R2R3".to_string() };
+        let boss = Player { hit_points: 104, damage: 8, armor: 1, items: "".to_string() };
+        assert!(you.is_win(&boss));
+
         let you = Player::new(8, 5, 5, "".to_string());
         let boss = Player::new(12, 7, 2, "".to_string());
         assert!(you.is_win(&boss));
