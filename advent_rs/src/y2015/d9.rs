@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use super::*;
-use std::collections::HashSet;
 use regex::Regex;
 
 fn parse_line(line: &str) -> (String, String, i32) {
@@ -13,8 +11,7 @@ fn parse_line(line: &str) -> (String, String, i32) {
     (from, to, dist)
 }
 
-fn calc_dist(items: &Vec<(String, String, i32)>, path: &Vec<String>) -> i32{
-
+fn calc_dist(items: &Vec<(String, String, i32)>, path: &Vec<String>) -> i32 {
     let mut total_dist = 0;
 
     for i in 0..path.len() - 1 {
@@ -33,7 +30,6 @@ fn calc_dist(items: &Vec<(String, String, i32)>, path: &Vec<String>) -> i32{
         if !found {
             panic!("cannot find location");
         }
-
     }
 
     total_dist
@@ -42,7 +38,7 @@ fn calc_dist(items: &Vec<(String, String, i32)>, path: &Vec<String>) -> i32{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::y2015::read_file;
+    use crate::*;
 
     #[test]
     fn quiz1() {

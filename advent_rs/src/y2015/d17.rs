@@ -1,5 +1,3 @@
-use super::*;
-
 // TODO Iterator implementations
 
 // https://mitpress.mit.edu/sites/default/files/sicp/full-text/book/book-Z-H-11.html#%_idx_728
@@ -10,8 +8,8 @@ fn combinations_n(amount: i32, coins: &Vec<i32>) -> usize {
     } else if amount < 0 || coins.is_empty() {
         0
     } else {
-        combinations_n(amount, &coins[1..].to_vec()) +
-            combinations_n(amount - coins[0], &coins[1..].to_vec())
+        combinations_n(amount, &coins[1..].to_vec())
+            + combinations_n(amount - coins[0], &coins[1..].to_vec())
     }
 }
 
@@ -34,6 +32,7 @@ fn combinations_d(amount: i32, coins: &Vec<i32>) -> Vec<Vec<i32>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
 
     #[test]
     fn quiz1() {
@@ -42,8 +41,7 @@ mod tests {
             .map(|line| line.parse::<i32>().unwrap())
             .collect();
 
-        assert_eq!(combinations_n(150, &containers),
-                   4372);
+        assert_eq!(combinations_n(150, &containers), 4372);
     }
 
     #[test]
@@ -54,18 +52,12 @@ mod tests {
             .collect();
 
         let combs = combinations_d(150, &containers);
-        let min_size = combs.iter()
-            .min_by_key(|vs| vs.len())
-            .unwrap()
-            .len();
+        let min_size = combs.iter().min_by_key(|vs| vs.len()).unwrap().len();
 
-        let count = combs.iter()
-            .filter(|vs| vs.len() == min_size)
-            .count();
+        let count = combs.iter().filter(|vs| vs.len() == min_size).count();
 
         assert_eq!(count, 0);
     }
-
 
     #[test]
     fn test_simple_combinations2() {

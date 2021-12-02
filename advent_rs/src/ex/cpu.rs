@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 // rust in action ch5, CPU
 
 struct CPU {
@@ -30,10 +32,10 @@ impl CPU {
 
             match (c, x, y, d) {
                 (0x0, 0x0, 0x0, 0x0) => break,
-                (0x8,   _,   _, 0x4) => self.add_xy(x, y),
-                (0x2,   _,   _,   _) => self.call(opcode & 0x0FFF),
+                (0x8, _, _, 0x4) => self.add_xy(x, y),
+                (0x2, _, _, _) => self.call(opcode & 0x0FFF),
                 (0x0, 0x0, 0xE, 0xE) => self.ret(),
-                _ => todo!("opcode {:04x}", opcode)
+                _ => todo!("opcode {:04x}", opcode),
             }
         }
     }
@@ -63,7 +65,6 @@ impl CPU {
         self.stack_pointer -= 1;
         self.position_in_memory = self.stack[self.stack_pointer] as usize;
     }
-
 }
 
 #[cfg(test)]
@@ -108,5 +109,42 @@ mod tests {
         cpu.run();
 
         assert_eq!(cpu.registers[0], 45);
+    }
+
+    fn test_op() {
+        let mut a: i32 = 42;
+        let a_ptr: *mut i32 = &mut a as *mut i32;
+    }
+
+    #[test]
+    fn test_as_ref() {
+        let x = "hello";
+        let y = String::from("hello_world!!!");
+        assert_eq!(is_strong(&x), false);
+        assert_eq!(is_strong(&y), true);
+
+        println!("{}", y);
+    }
+
+    // fn is_strong<T: AsRef<str>>(msg: &T) -> bool {
+    //     msg.as_ref().len() >  10
+    // }
+
+    fn is_strong(msg: &str) -> bool {
+        msg.len() > 10
+    }
+
+    #[test]
+    fn scan1() {
+        let mut n_nonzero = 0;
+        for i in 0..10000 {
+            let ptr = i as *const u8;
+            let byte_at_addr = unsafe { *ptr };
+            if byte_at_addr != 0 {
+                n_nonzero += 1;
+            }
+        }
+
+        println!("non-zero bytes in  memory: {}", n_nonzero);
     }
 }

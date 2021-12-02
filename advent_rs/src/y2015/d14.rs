@@ -1,12 +1,10 @@
-use super::*;
-
 use regex::Regex;
 
 fn parse_line(line: &str) -> (i32, i32, i32) {
     let re = Regex::new(
-        r"(\w+) can fly (\d+) km/s for (\d+) seconds, but then must rest for (\d+) seconds.")
-        .unwrap();
-
+        r"(\w+) can fly (\d+) km/s for (\d+) seconds, but then must rest for (\d+) seconds.",
+    )
+    .unwrap();
 
     let caps = re.captures(line).unwrap();
 
@@ -57,16 +55,16 @@ fn calc_points(rules: &Vec<(i32, i32, i32)>, time: i32) -> Vec<i32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
 
     const DURATION: i32 = 2503;
 
     #[test]
     fn quiz2() {
-        let rules: Vec<(i32, i32, i32)> =
-            read_file("../data/2015/input14.txt")
-                .lines()
-                .map(|line| parse_line(line))
-                .collect();
+        let rules: Vec<(i32, i32, i32)> = read_file("../data/2015/input14.txt")
+            .lines()
+            .map(|line| parse_line(line))
+            .collect();
 
         let points = calc_points(&rules, DURATION);
 
@@ -75,11 +73,7 @@ mod tests {
 
     #[test]
     fn test_leader() {
-        let rules = vec![
-            (10, 10, 10),
-            (10, 20, 10),
-            (10, 30, 10),
-        ];
+        let rules = vec![(10, 10, 10), (10, 20, 10), (10, 30, 10)];
         assert_eq!(leaders(&rules, 1), vec![0, 1, 2]);
         assert_eq!(leaders(&rules, 11), vec![1, 2]);
         assert_eq!(leaders(&rules, 21), vec![2]);
@@ -87,7 +81,6 @@ mod tests {
 
     #[test]
     fn quiz1() {
-
         let distance = read_file("../data/2015/input14.txt")
             .lines()
             .map(|line| parse_line(line))

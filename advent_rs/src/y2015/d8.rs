@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use regex::Regex;
-use super::*;
 
 /*
 처음에는 정규식으로 케이스들을 치환한 후 카운트 하였으나 계속 실패
@@ -79,13 +78,10 @@ fn unescaped_mem_count(line: &str) -> (usize, usize) {
     while i < chars.len() - 1 {
         mem += 1;
         match chars[i] {
-            '\\' => {
-                match chars[i + 1] {
-                    'x' => i += 4,
-                    '\\' | '"' => i += 2,
-                    _ => panic!("Invalid format")
-                }
-
+            '\\' => match chars[i + 1] {
+                'x' => i += 4,
+                '\\' | '"' => i += 2,
+                _ => panic!("Invalid format"),
             },
             _ => i += 1,
         }
@@ -113,7 +109,7 @@ fn escaped_mem_count(line: &str) -> (usize, usize) {
     for c in line.chars() {
         match c {
             '"' | '\\' => escaped += 2,
-            _ => escaped += 1
+            _ => escaped += 1,
         }
     }
 
@@ -144,6 +140,7 @@ fn escaped_mem_counts(text: &str) -> (usize, usize) {
 mod tests {
 
     use super::*;
+    use crate::*;
 
     #[test]
     fn test_string_slice() {

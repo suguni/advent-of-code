@@ -1,5 +1,4 @@
 use regex::Regex;
-use super::*;
 
 #[derive(PartialEq, Eq, Debug)]
 struct Ingredient(i32, i32, i32, i32, i32);
@@ -21,9 +20,7 @@ fn parse_line(line: &str) -> Ingredient {
 }
 
 fn load_ingredients(text: &str) -> Vec<Ingredient> {
-    text.lines()
-        .map(|line| parse_line(line))
-        .collect()
+    text.lines().map(|line| parse_line(line)).collect()
 }
 
 fn calc_score(ingredients: &Vec<Ingredient>, weights: Vec<i32>) -> (i32, i32) {
@@ -39,16 +36,18 @@ fn calc_score(ingredients: &Vec<Ingredient>, weights: Vec<i32>) -> (i32, i32) {
 
     (
         sum[0].max(0) * sum[1].max(0) * sum[2].max(0) * sum[3].max(0),
-        cal
+        cal,
     )
 }
 
-fn list_of_weights() -> impl std::iter::Iterator<Item=(i32, i32, i32, i32)> {
+fn list_of_weights() -> impl std::iter::Iterator<Item = (i32, i32, i32, i32)> {
     (0..=100)
-        .flat_map(|i| (0..=(100 - i))
-            .flat_map(move |j| (0..=(100 - i - j))
-                .flat_map(move |k| (0..=(100 - i - j - k))
-                    .map(move |l| (i, j, k, l)))))
+        .flat_map(|i| {
+            (0..=(100 - i)).flat_map(move |j| {
+                (0..=(100 - i - j))
+                    .flat_map(move |k| (0..=(100 - i - j - k)).map(move |l| (i, j, k, l)))
+            })
+        })
         .filter(|(i, j, k, l)| i + j + k + l == 100)
 }
 
@@ -79,11 +78,14 @@ fn max_score2(ingredients: &Vec<Ingredient>) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
 
     #[test]
     fn test_parse() {
-        assert_eq!(parse_line("Frosting: capacity 4, durability -2, flavor 0, texture 0, calories 5"),
-                   Ingredient(4, -2, 0, 0, 5));
+        assert_eq!(
+            parse_line("Frosting: capacity 4, durability -2, flavor 0, texture 0, calories 5"),
+            Ingredient(4, -2, 0, 0, 5)
+        );
     }
 
     #[test]
@@ -101,7 +103,9 @@ mod tests {
     #[test]
     fn test_flat_map() {
         assert_eq!(
-            (0..2).flat_map(|i| (0..2).map(move |j| (i, j))).collect::<Vec<(i32, i32)>>(),
+            (0..2)
+                .flat_map(|i| (0..2).map(move |j| (i, j)))
+                .collect::<Vec<(i32, i32)>>(),
             vec![(0, 0), (0, 1), (1, 0), (1, 1)]
         );
     }
