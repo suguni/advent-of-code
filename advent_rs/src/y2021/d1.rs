@@ -30,6 +30,7 @@ fn count_increased(nums: Vec<i32>) -> usize {
 }
 
 #[cfg(test)]
+#[allow(unused)]
 mod tests {
 
     use super::*;
