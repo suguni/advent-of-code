@@ -1,8 +1,14 @@
 use regex::Regex;
 
+// FIXME min_max_coords 에서 min 이 항상 0 이 나오는 오류 존재한다.
+// line 의 좌표를 무조건 0 기준으로 계산하므로 위 오류때문에 이후 로직이 문제가 없었음.
+// min_max_coords 함수를 만든 의도와는 다르게 잘못 동작하지만 계산은 맞고 있던 상황.
+// 문제는 불필요하게 보드의 크기를 크게 만들고 있다는 점과 코드 작성 의도와 동작이 다르다는 점.
+// 나중에 수정?
+
 type Line = ((i32, i32), (i32, i32));
 
-pub fn parse_line(line: &str) -> Line {
+fn parse_line(line: &str) -> Line {
     let cas = Regex::new(r"^(\d+),(\d+) -> (\d+),(\d+)$")
         .unwrap()
         .captures(line)
@@ -20,7 +26,7 @@ pub fn parse_line(line: &str) -> Line {
     )
 }
 
-pub fn min_max_coords(lines: &Vec<Line>) -> ((i32, i32), (i32, i32)) {
+fn min_max_coords(lines: &Vec<Line>) -> ((i32, i32), (i32, i32)) {
     lines.iter().fold(
         ((0, 0), (0, 0)),
         |((min_x, min_y), (max_x, max_y)), ((ax, ay), (bx, by))| {
@@ -33,11 +39,11 @@ pub fn min_max_coords(lines: &Vec<Line>) -> ((i32, i32), (i32, i32)) {
     )
 }
 
-pub fn is_hv_line(((sx, sy), (ex, ey)): &Line) -> bool {
+fn is_hv_line(((sx, sy), (ex, ey)): &Line) -> bool {
     sx == ex || sy == ey
 }
 
-pub fn filter_hv_lines(lines: &Vec<Line>) -> Vec<Line> {
+fn filter_hv_lines(lines: &Vec<Line>) -> Vec<Line> {
     lines
         .iter()
         .filter(|line| is_hv_line(*line))
@@ -45,7 +51,7 @@ pub fn filter_hv_lines(lines: &Vec<Line>) -> Vec<Line> {
         .collect()
 }
 
-pub fn draw_line(board: &mut Vec<u32>, width: usize, ((sx, sy), (ex, ey)): &Line) {
+fn draw_line(board: &mut Vec<u32>, width: usize, ((sx, sy), (ex, ey)): &Line) {
     let (dx, dy, steps) = if sx == ex {
         if ey > sy {
             (0, 1, ey - sy)
@@ -79,14 +85,14 @@ pub fn draw_line(board: &mut Vec<u32>, width: usize, ((sx, sy), (ex, ey)): &Line
     })
 }
 
-pub fn generate_board(lines: &Vec<Line>) -> (Vec<u32>, usize, usize) {
+fn generate_board(lines: &Vec<Line>) -> (Vec<u32>, usize, usize) {
     let ((sx, sy), (ex, ey)) = min_max_coords(&lines);
     let width = (ex - sx + 1) as usize;
     let height = (ey - sy + 1) as usize;
     (vec![0; width * height], width, height)
 }
 
-pub fn draw_lines(board: &mut Vec<u32>, width: usize, lines: &Vec<Line>) {
+fn draw_lines(board: &mut Vec<u32>, width: usize, lines: &Vec<Line>) {
     lines.iter().for_each(|line| draw_line(board, width, line));
 }
 
