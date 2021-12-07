@@ -71,12 +71,18 @@ pub fn live_fishes_count(starts: &Vec<i64>, days: i64) -> i64 {
 
 fn live_fish_count(start: i64, days: i64) -> i64 {
     let add = (7 - start - 1) % 7;
-    born_count(days + add) + 1
+    let days = days + add;
+    let mut counts = vec![-1; (days + 1) as usize];
+    born_count_d(days, &mut counts) + 1
 }
 
-fn born_count(days: i64) -> i64 {
+fn born_count_d(days: i64, counts: &mut Vec<i64>) -> i64 {
     if days < 7 {
         return 0;
+    }
+
+    if counts[days as usize] >= 0 {
+        return counts[days as usize];
     }
 
     let n = days / 7;
@@ -90,9 +96,10 @@ fn born_count(days: i64) -> i64 {
             break;
         }
 
-        count += born_count(d);
+        count += born_count_d(d, counts);
     }
 
+    counts[days as usize] = count;
     count
 }
 
@@ -203,10 +210,10 @@ mod tests {
 
     #[test]
     fn test_born_count() {
-        assert_eq!(born_count(6), 0);
-        assert_eq!(born_count(7), 1);
-        assert_eq!(born_count(14), 2);
-        assert_eq!(born_count(16), 3);
+        assert_eq!(born_count_d(6, &mut vec![-1; 7]), 0);
+        assert_eq!(born_count_d(7, &mut vec![-1; 8]), 1);
+        assert_eq!(born_count_d(14, &mut vec![-1; 15]), 2);
+        assert_eq!(born_count_d(16, &mut vec![-1; 17]), 3);
     }
 
     #[test]
