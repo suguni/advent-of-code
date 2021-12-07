@@ -6,12 +6,21 @@ use std::fs::File;
 use std::hash::Hash;
 use std::io::Read;
 use std::io::Write;
+use std::str::FromStr;
 
 pub fn read_file(filename: &str) -> String {
     let mut f = File::open(filename).expect("file not found");
     let mut contents = String::new();
     f.read_to_string(&mut contents).expect("read error");
     contents
+}
+
+pub fn split_text<T>(text: &str, sep: char) -> Vec<T>
+where
+    T: FromStr,
+    <T as FromStr>::Err: std::fmt::Debug,
+{
+    text.split(sep).map(|s| s.parse().unwrap()).collect()
 }
 
 pub fn write_file(filename: &str, text: &str) {
