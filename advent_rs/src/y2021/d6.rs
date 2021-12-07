@@ -60,29 +60,29 @@ pub fn load_data(text: &str) -> Vec<i64> {
 
 pub fn live_fishes_count(starts: &Vec<i64>, days: i64) -> i64 {
     let unique_starts: HashSet<i64> = starts.iter().cloned().collect();
-    let mut counts = [0_i64; 7];
+    let min = *unique_starts.iter().min().unwrap();
+    let mut cache = vec![-1; align_days(min, days) as usize + 1];
+
+    let mut counts = [0; 7];
 
     for start in unique_starts.iter() {
-        counts[*start as usize] = live_fish_count(*start, days);
+        counts[*start as usize] = live_fish_count(align_days(*start, days), &mut cache) + 1;
     }
 
     starts.iter().map(|i| counts[*i as usize]).sum()
 }
 
-fn live_fish_count(start: i64, days: i64) -> i64 {
-    let add = (7 - start - 1) % 7;
-    let days = days + add;
-    let mut counts = vec![-1; (days + 1) as usize];
-    born_count_d(days, &mut counts) + 1
+fn align_days(start: i64, days: i64) -> i64 {
+    days + 6 - start
 }
 
-fn born_count_d(days: i64, counts: &mut Vec<i64>) -> i64 {
+fn live_fish_count(days: i64, cache: &mut Vec<i64>) -> i64 {
     if days < 7 {
         return 0;
     }
 
-    if counts[days as usize] >= 0 {
-        return counts[days as usize];
+    if cache[days as usize] >= 0 {
+        return cache[days as usize];
     }
 
     let n = days / 7;
@@ -96,10 +96,10 @@ fn born_count_d(days: i64, counts: &mut Vec<i64>) -> i64 {
             break;
         }
 
-        count += born_count_d(d, counts);
+        count += live_fish_count(d, cache);
     }
 
-    counts[days as usize] = count;
+    cache[days as usize] = count;
     count
 }
 
@@ -109,17 +109,22 @@ mod tests {
     use super::*;
     use crate::read_file;
 
+    fn assert_live_fish_count(start: i64, days: i64, expected: i64) {
+        let days = align_days(start, days);
+        let size = days as usize + 1;
+        assert_eq!(live_fish_count(days, &mut vec![-1; size]), expected);
+    }
+
     #[test]
     fn test_born_count_start() {
-        assert_eq!(live_fish_count(6, 6), 1);
-        assert_eq!(live_fish_count(6, 7), 2);
-        assert_eq!(live_fish_count(6, 14), 3);
-        assert_eq!(live_fish_count(6, 16), 4);
-
-        assert_eq!(live_fish_count(1, 1), 1);
-        assert_eq!(live_fish_count(1, 2), 2);
-        assert_eq!(live_fish_count(1, 9), 3);
-        assert_eq!(live_fish_count(1, 11), 4);
+        assert_live_fish_count(6, 6, 1);
+        assert_live_fish_count(6, 7, 2);
+        assert_live_fish_count(6, 14, 3);
+        assert_live_fish_count(6, 16, 4);
+        assert_live_fish_count(1, 1, 1);
+        assert_live_fish_count(1, 2, 2);
+        assert_live_fish_count(1, 9, 3);
+        assert_live_fish_count(1, 11, 4);
 
         // 3
         // 2
@@ -140,7 +145,7 @@ mod tests {
         // 1 3 3 5
         // 0 2 2 4
         // 6 1 1 3 8
-        assert_eq!(live_fish_count(3, 18), 5);
+        assert_live_fish_count(3, 18, 5);
 
         // 4
         // 3
@@ -161,7 +166,7 @@ mod tests {
         // 2 4 4 6
         // 1 3 3 5
         // 0 2 2 4
-        assert_eq!(live_fish_count(4, 18), 4);
+        assert_live_fish_count(4, 18, 4);
 
         // 2
         // 1
@@ -182,8 +187,8 @@ mod tests {
         // 0 2 2 4
         // 6 1 1 3 8
         // 5 0 0 2 7
-        assert_eq!(live_fish_count(2, 17), 5);
-        assert_eq!(live_fish_count(2, 18), 5);
+        assert_live_fish_count(2, 17, 5);
+        assert_live_fish_count(2, 18, 5);
 
         // 1
         // 0
@@ -204,16 +209,7 @@ mod tests {
         // 6 1 1 3 8
         // 5 0 0 2 7
         // 4 6 6 1 6 8 8
-        assert_eq!(live_fish_count(1, 18), 7);
-        // assert_eq!(live_fish_count(6, 256), 0);
-    }
-
-    #[test]
-    fn test_born_count() {
-        assert_eq!(born_count_d(6, &mut vec![-1; 7]), 0);
-        assert_eq!(born_count_d(7, &mut vec![-1; 8]), 1);
-        assert_eq!(born_count_d(14, &mut vec![-1; 15]), 2);
-        assert_eq!(born_count_d(16, &mut vec![-1; 17]), 3);
+        assert_live_fish_count(1, 18, 7);
     }
 
     #[test]
