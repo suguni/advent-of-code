@@ -99,11 +99,58 @@ fn live_born_fish_count(days: i64, cache: &mut Vec<i64>) -> i64 {
     count
 }
 
+// from https://www.youtube.com/watch?v=umHxPjNXD6Y 역시 똑똑해야... ㅠㅠ
+fn counts(starts: &Vec<i32>) -> [i64; 9] {
+    let mut counts = [0; 9];
+    for s in starts {
+        counts[*s as usize] += 1;
+    }
+    counts
+}
+
+pub fn next_day(counts: &mut [i64; 9]) {
+    let d0 = counts[0];
+    for i in 1..9 {
+        counts[i - 1] = counts[i];
+    }
+    counts[8] = d0;
+    counts[6] += d0;
+}
+
+pub fn quiz(starts: &Vec<i32>, days: i32) -> i64 {
+    let mut counts = counts(starts);
+    (0..days).for_each(|_| next_day(&mut counts));
+    counts.iter().sum()
+}
+
 #[cfg(test)]
 mod tests {
 
     use super::*;
     use crate::{read_file, split_text};
+
+    #[test]
+    fn test_counts() {
+        let starts = vec![3, 4, 3, 1, 2];
+        assert_eq!(counts(&starts), [0, 1, 1, 2, 1, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn test_next_day() {
+        let mut counts = [0, 1, 1, 2, 1, 0, 0, 0, 0]; // 3,4,3,1,2
+
+        next_day(&mut counts);
+        assert_eq!(counts, [1, 1, 2, 1, 0, 0, 0, 0, 0]); // 2,3,2,0,1
+
+        next_day(&mut counts);
+        assert_eq!(counts, [1, 2, 1, 0, 0, 0, 1, 0, 1]); // 1,2,1,6,0,8
+
+        next_day(&mut counts);
+        assert_eq!(counts, [2, 1, 0, 0, 0, 1, 1, 1, 1]); // 0,1,0,5,6,7,8
+
+        next_day(&mut counts);
+        assert_eq!(counts, [1, 0, 0, 0, 1, 1, 3, 1, 2]); // 6,0,6,4,5,6,7,8,8
+    }
 
     fn assert_live_born_fish_count(start: i64, days: i64, expected: i64) {
         let days = align_days(start, days);
@@ -243,13 +290,15 @@ mod tests {
     fn run_d6_quiz1() {
         let text = read_file("data/2021/input6.txt");
         let state = split_text(text.as_str().trim(), ',');
-        assert_eq!(live_fishes_count(&state, 80), 380612);
+        // assert_eq!(live_fishes_count(&state, 80), 380612);
+        assert_eq!(quiz(&state, 80), 380612);
     }
 
     #[test]
     fn run_d6_quiz2() {
         let text = read_file("data/2021/input6.txt");
         let state = split_text(text.as_str().trim(), ',');
-        assert_eq!(live_fishes_count(&state, 256), 1710166656900);
+        // assert_eq!(live_fishes_count(&state, 256), 1710166656900);
+        assert_eq!(quiz(&state, 256), 1710166656900);
     }
 }
