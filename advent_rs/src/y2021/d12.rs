@@ -38,52 +38,10 @@ fn load_data(text: &str) -> HashMap<Node, HashSet<Node>> {
     })
 }
 
-fn tranverse_map(links: &mut HashMap<Node, HashSet<Node>>) -> Vec<Vec<Node>> {
-    let mut completed: Vec<Vec<Node>> = vec![];
-    let mut paths: Vec<Vec<Node>> = vec![vec![Node::Start]];
-
-    while let Some(path) = paths.pop() {
-        let last = path.last().unwrap();
-
-        for next in links[&last].iter() {
-            let mut next_path = path.clone();
-
-            match next {
-                Node::End => {
-                    next_path.push(next.clone());
-                    completed.push(next_path);
-                }
-                Node::Start => {}
-                Node::Big(_) => {
-                    next_path.push(next.clone());
-                    paths.push(next_path);
-                }
-                Node::Small(_) => {
-                    if !next_path.contains(&next) {
-                        next_path.push(next.clone());
-                        paths.push(next_path);
-                    }
-                }
-            }
-        }
-    }
-
-    completed
-}
-
-fn can_visit(visited: &HashMap<Node, usize>, node: &Node) -> bool {
-    if let Some(count) = visited.get(node) {
-        if *count > 1 {
-            return false;
-        }
-    } else {
-        return true;
-    }
-
-    visited.values().all(|v| *v <= 1)
-}
-
-fn tranverse_map2(links: &mut HashMap<Node, HashSet<Node>>) -> Vec<Vec<Node>> {
+fn tranverse_map(
+    links: &mut HashMap<Node, HashSet<Node>>,
+    can_visit_small: fn(visited: &HashMap<Node, usize>, node: &Node) -> bool,
+) -> Vec<Vec<Node>> {
     let mut completed: Vec<Vec<Node>> = vec![];
 
     let mut paths: Vec<(Vec<Node>, HashMap<Node, usize>)> =
@@ -107,7 +65,7 @@ fn tranverse_map2(links: &mut HashMap<Node, HashSet<Node>>) -> Vec<Vec<Node>> {
                     paths.push((next_path, next_visited));
                 }
                 Node::Small(_) => {
-                    if can_visit(&next_visited, &next) {
+                    if can_visit_small(&next_visited, &next) {
                         next_path.push(next.clone());
                         let e = next_visited.entry(next.clone()).or_insert(0);
                         *e += 1;
@@ -121,15 +79,31 @@ fn tranverse_map2(links: &mut HashMap<Node, HashSet<Node>>) -> Vec<Vec<Node>> {
     completed
 }
 
+fn can_visit_quiz1(visited: &HashMap<Node, usize>, node: &Node) -> bool {
+    visited.get(node).is_none()
+}
+
 pub fn quiz1(text: &str) -> usize {
     let mut links = load_data(text);
-    let paths = tranverse_map(&mut links);
+    let paths = tranverse_map(&mut links, can_visit_quiz1);
     paths.len()
+}
+
+fn can_visit_quiz2(visited: &HashMap<Node, usize>, node: &Node) -> bool {
+    if let Some(count) = visited.get(node) {
+        if *count > 1 {
+            return false;
+        }
+    } else {
+        return true;
+    }
+
+    visited.values().all(|v| *v <= 1)
 }
 
 pub fn quiz2(text: &str) -> usize {
     let mut links = load_data(text);
-    let paths = tranverse_map2(&mut links);
+    let paths = tranverse_map(&mut links, can_visit_quiz2);
     paths.len()
 }
 
@@ -268,7 +242,7 @@ start-RW";
     fn test_traverse() {
         let mut links = load_data(DATA1.trim());
 
-        let paths = tranverse_map(&mut links);
+        let paths = tranverse_map(&mut links, can_visit_quiz1);
 
         let paths = paths
             .iter()
@@ -295,7 +269,7 @@ start,b,end"
     fn test_traverse2() {
         let mut links = load_data(DATA1.trim());
 
-        let paths = tranverse_map2(&mut links);
+        let paths = tranverse_map(&mut links, can_visit_quiz2);
 
         let paths = paths
             .iter()
