@@ -1,5 +1,3 @@
-#+TITLE: Readme
-
-* Advent of Code
+#+TITLE: Advent of Code
 
 https://adventofcode.com/
