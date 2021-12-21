@@ -1,17 +1,3 @@
-// fn load_data(text: &str) -> (Vec<i32>, usize, usize) {
-// let rows = text.lines().count();
-// let cols = text.lines().next().unwrap().chars().count();
-// let levels = text
-//     .lines()
-//     .flat_map(|line| {
-//         line.chars()
-//             .map(|c| c.to_digit(10).unwrap() as i32)
-//             .collect::<Vec<i32>>()
-//     })
-//     .collect::<Vec<i32>>();
-
-// (levels, rows, cols)
-// }
 fn hex2bins(c: char) -> Vec<u8> {
     let mut v = c.to_digit(16).unwrap();
     let mut bins = vec![0_u8; 4];
@@ -113,7 +99,93 @@ pub fn quiz1(text: &str) -> u32 {
     count
 }
 
-// pub fn quiz2(text: &str) -> i32 {}
+fn value_of_literal_packet(packet: &Vec<u8>, offset: usize) -> (u64, usize) {
+    let mut offset = offset + 6;
+    let mut value = 0;
+    loop {
+        value = value * 16 + bins2num(packet, offset + 1, 4) as u64;
+        if packet[offset] == 0 {
+            return (value, offset + 5);
+        }
+        offset += 5;
+    }
+}
+
+pub fn count_values(packet: &Vec<u8>, offset: usize) -> (u64, usize) {
+    let _v = packet_version(packet, offset);
+    let t = packet_type(packet, offset);
+
+    if t == LITERAL {
+        return value_of_literal_packet(packet, offset);
+    }
+
+    let bit_i = packet[offset + 6];
+
+    let mut values = vec![];
+    let mut current_offset = offset;
+
+    if bit_i == 0 {
+        let sub_packet_len = length_of_sub_packet(packet, offset);
+        let end_of_packet = offset + 22 + sub_packet_len as usize;
+
+        current_offset += 22;
+
+        while current_offset < end_of_packet {
+            let (c, next_offset) = count_values(packet, current_offset);
+            values.push(c);
+            current_offset = next_offset;
+        }
+    } else {
+        let sub_packet_count = count_of_sub_packet(packet, offset);
+        current_offset += 18;
+
+        for _ in 0..sub_packet_count {
+            let (c, next_offset) = count_values(packet, current_offset);
+            values.push(c);
+            current_offset = next_offset;
+        }
+    }
+
+    let value = match t {
+        0 => values.iter().sum::<u64>(),
+        1 => values.iter().product::<u64>(),
+        2 => *values.iter().min().unwrap(),
+        3 => *values.iter().max().unwrap(),
+        5 => {
+            assert!(values.len() == 2);
+            if values[0] > values[1] {
+                1
+            } else {
+                0
+            }
+        }
+        6 => {
+            assert!(values.len() == 2);
+            if values[0] < values[1] {
+                1
+            } else {
+                0
+            }
+        }
+        7 => {
+            assert!(values.len() == 2);
+            if values[0] == values[1] {
+                1
+            } else {
+                0
+            }
+        }
+        _ => panic!(),
+    };
+
+    return (value, current_offset);
+}
+
+pub fn quiz2(text: &str) -> u64 {
+    let packet = hexs2bins(text);
+    let (value, _) = count_values(&packet, 0);
+    value
+}
 
 #[cfg(test)]
 mod tests {
@@ -121,7 +193,12 @@ mod tests {
     use super::*;
     use crate::*;
 
-    // const DATA1: &str = "";
+    #[test]
+    fn test_value_of_literal_packet() {
+        let packet = hexs2bins("D2FE28");
+        let (v, _) = value_of_literal_packet(&packet, 0);
+        assert_eq!(v, 2021);
+    }
 
     #[test]
     fn test_count_versions() {
@@ -199,11 +276,36 @@ mod tests {
         assert_eq!(quiz1(text.as_str().trim()), 993);
     }
 
-    // #[test]
-    // fn run_2021_d16_quiz2() {
-    //     assert_eq!(quiz2(DATA1.trim()), 315);
+    #[test]
+    fn test_count_values() {
+        let (v, _) = count_values(&hexs2bins("C200B40A82"), 0);
+        assert_eq!(v, 3);
 
-    //     let text = read_file("data/2021/input16.txt");
-    //     assert_eq!(quiz2(text.as_str().trim()), 2948);
-    // }
+        let (v, _) = count_values(&hexs2bins("04005AC33890"), 0);
+        assert_eq!(v, 54);
+
+        let (v, _) = count_values(&hexs2bins("880086C3E88112"), 0);
+        assert_eq!(v, 7);
+
+        let (v, _) = count_values(&hexs2bins("CE00C43D881120"), 0);
+        assert_eq!(v, 9);
+
+        let (v, _) = count_values(&hexs2bins("D8005AC2A8F0"), 0);
+        assert_eq!(v, 1);
+
+        let (v, _) = count_values(&hexs2bins("F600BC2D8F"), 0);
+        assert_eq!(v, 0);
+
+        let (v, _) = count_values(&hexs2bins("9C005AC2F8F0"), 0);
+        assert_eq!(v, 0);
+
+        let (v, _) = count_values(&hexs2bins("9C0141080250320F1802104A08"), 0);
+        assert_eq!(v, 1);
+    }
+
+    #[test]
+    fn run_2021_d16_quiz2() {
+        let text = read_file("data/2021/input16.txt");
+        assert_eq!(quiz2(text.as_str().trim()), 993);
+    }
 }
