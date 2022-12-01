@@ -1,5 +1,6 @@
 mod y2015;
-pub mod y2021;
+mod y2021;
+mod y2022;
 
 use std::collections::HashSet;
 use std::fs::File;
