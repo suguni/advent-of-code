@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 mod y2015;
 mod y2021;
 mod y2022;
