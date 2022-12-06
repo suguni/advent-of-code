@@ -9,7 +9,7 @@ fn proc(input: &str, size: usize) -> usize {
     let (idx, _) = cs
         .windows(size)
         .enumerate()
-        .find(|&(_, xs)| xs.iter().collect::<HashSet<_>>().len() == size)
+        .find(|&(_, xs)| xs.iter().collect::<HashSet<_>>().len() == xs.len())
         .unwrap();
     idx + size
 }

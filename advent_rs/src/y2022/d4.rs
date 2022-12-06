@@ -1,20 +1,53 @@
-use std::convert::TryInto;
+use std::{convert::TryInto, ops::RangeInclusive};
+
+use nom::{
+    bytes::complete::tag, character::complete::newline, multi::separated_list1,
+    sequence::separated_pair, *,
+};
+use regex::Regex;
 
 use crate::read_file;
 
-fn process1(input: &str) -> usize {
+fn parse_range(input: &str) -> IResult<&str, RangeInclusive<u32>> {
+    let (input, (s, e)) = separated_pair(
+        nom::character::complete::u32,
+        tag("-"),
+        nom::character::complete::u32,
+    )(input)?;
+    IResult::Ok((input, s..=e))
+}
+
+fn parse_line(input: &str) -> IResult<&str, (RangeInclusive<u32>, RangeInclusive<u32>)> {
+    separated_pair(parse_range, tag(","), parse_range)(input)
+}
+
+fn parse_lines(input: &str) -> IResult<&str, Vec<(RangeInclusive<u32>, RangeInclusive<u32>)>> {
+    separated_list1(newline, parse_line)(input)
+}
+
+fn load(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {
+    let (_, ranges) = parse_lines(input).unwrap();
+    ranges
+}
+
+fn load_regex(input: &str) -> Vec<(RangeInclusive<usize>, RangeInclusive<usize>)> {
+    let regex = Regex::new(r"^(\d+)-(\d+),(\d+)-(\d+)$").unwrap();
     input
         .lines()
         .map(|line| {
-            let mut xs = line.split(',').map(|rng| {
-                let it = rng
-                    .split('-')
-                    .map(|n| n.parse::<usize>().unwrap())
-                    .collect::<Vec<_>>();
-                it[0]..=it[1]
-            });
-            (xs.next().unwrap(), xs.next().unwrap())
+            let cas = regex.captures(line).unwrap();
+            let l1 = *&cas[1].parse::<usize>().unwrap();
+            let l2 = *&cas[2].parse::<usize>().unwrap();
+            let r1 = *&cas[3].parse::<usize>().unwrap();
+            let r2 = *&cas[4].parse::<usize>().unwrap();
+            (l1..=l2, r1..=r2)
         })
+        .collect()
+}
+
+fn process1(input: &str) -> usize {
+    let rs = load(input);
+    rs.iter()
         .filter(|(a, b)| {
             (a.start() <= b.start() && b.end() <= a.end())
                 || (b.start() <= a.start() && a.end() <= b.end())
@@ -28,18 +61,8 @@ fn quiz1() -> usize {
 }
 
 fn process2(input: &str) -> usize {
-    input
-        .lines()
-        .map(|line| {
-            let mut xs = line.split(',').map(|rng| {
-                let it = rng
-                    .split('-')
-                    .map(|n| n.parse::<usize>().unwrap())
-                    .collect::<Vec<_>>();
-                it[0]..=it[1]
-            });
-            (xs.next().unwrap(), xs.next().unwrap())
-        })
+    let rs = load(input);
+    rs.iter()
         .filter(|(a, b)| {
             (a.start() <= b.start() && b.start() <= a.end())
                 || (b.start() <= a.start() && a.start() <= b.end())
