@@ -17,7 +17,7 @@ pub fn quiz1(bottom: i32) -> i32 {
     (bottom - 1) * bottom / 2
 }
 
-fn dist(mut vel: i32, step: i32) -> i32 {
+pub fn dist(mut vel: i32, step: i32) -> i32 {
     let mut distance = 0;
     for _ in 0..step {
         distance += vel;
