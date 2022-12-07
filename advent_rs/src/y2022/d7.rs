@@ -2,66 +2,97 @@ use std::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::character::complete::{alpha1, anychar, digit1, newline, not_line_ending, space1};
+use nom::multi::{separated_list0, separated_list1};
+use nom::sequence::separated_pair;
+use nom::IResult;
 use regex::Regex;
 
 use crate::read_file;
 
 const FILE_NAME: &str = "data/2022/input7.txt";
 
-fn capture_cd(line: &str) -> Option<String> {
-    let regex = Regex::new(r"^\$ cd (.+)$").unwrap();
-    regex.captures(line).map(|cas| cas[1].to_owned())
+#[derive(Debug)]
+enum Op<'a> {
+    Ls(Vec<File<'a>>),
+    Cd(&'a str),
 }
 
-fn capture_ls(line: &str) -> Option<()> {
-    let regex = Regex::new(r"^\$ ls$").unwrap();
-    regex.captures(line).map(|cas| ())
+#[derive(Debug)]
+enum File<'a> {
+    Dir(&'a str),
+    File(&'a str, usize),
 }
 
-fn capture_dir(line: &str) -> Option<String> {
-    let regex = Regex::new(r"^dir (.+)$").unwrap();
-    regex.captures(line).map(|cas| cas[1].to_owned())
+fn file(input: &str) -> IResult<&str, File> {
+    let (input, (size, name)) = separated_pair(digit1, space1, not_line_ending)(input)?;
+    Ok((input, File::File(name, size.parse::<usize>().unwrap())))
 }
 
-fn capture_file(line: &str) -> Option<(usize, String)> {
-    let regex = Regex::new(r"^(\d+) (.+)$").unwrap();
-    regex
-        .captures(line)
-        .map(|cas| (cas[1].parse::<usize>().unwrap(), cas[2].to_owned()))
+fn dir(input: &str) -> IResult<&str, File> {
+    let (input, _) = tag("dir ")(input)?;
+    let (input, dir) = not_line_ending(input)?;
+    Ok((input, File::Dir(dir)))
 }
 
-fn proc(lines: &str) -> HashMap<PathBuf, usize> {
+fn ls(input: &str) -> IResult<&str, Op> {
+    let (input, _) = tag("$ ls")(input)?;
+    let (input, _) = newline(input)?;
+    let (input, fs) = separated_list1(newline, alt((dir, file)))(input)?;
+    Ok((input, Op::Ls(fs)))
+}
+
+fn cd(input: &str) -> IResult<&str, Op> {
+    let (input, _) = tag("$ cd ")(input)?;
+    let (input, dir) = alt((tag(".."), alpha1, tag("/")))(input)?;
+    Ok((input, Op::Cd(dir)))
+}
+
+fn commands(input: &str) -> IResult<&str, Vec<Op>> {
+    separated_list1(newline, alt((ls, cd)))(input)
+}
+
+fn proc(input: &str) -> HashMap<PathBuf, usize> {
+    let (_, vvs) = commands(input).unwrap();
+
     let mut current = PathBuf::new();
-    let mut fs: HashMap<PathBuf, Vec<(usize, String)>> = HashMap::new();
-    fs.insert(PathBuf::from("/"), vec![]);
+    let mut fs: HashMap<PathBuf, usize> = HashMap::new();
+    fs.insert(PathBuf::from("/"), 0);
 
-    for line in lines.lines() {
-        if let Some(path) = capture_cd(line) {
-            if path == "..".to_owned() {
-                current.pop();
-            } else {
-                current.push(path);
-            }
-        } else if let Some(()) = capture_ls(line) {
-            //
-        } else if let Some(dir) = capture_dir(line) {
-            let mut sub = current.clone();
-            sub.push(dir);
-            fs.insert(sub, vec![]);
-        } else if let Some((size, name)) = capture_file(line) {
-            for (fb, vs) in fs.iter_mut() {
-                if current.starts_with(fb) {
-                    vs.push((size, name.clone()));
+    for op in vvs {
+        match op {
+            Op::Ls(vs) => {
+                for file in vs {
+                    match file {
+                        File::Dir(dir) => {
+                            let mut sub = current.clone();
+                            sub.push(dir);
+                            fs.insert(sub, 0);
+                        }
+                        File::File(name, size) => {
+                            for (fb, vs) in fs.iter_mut() {
+                                if current.starts_with(fb) {
+                                    *vs += size;
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        } else {
-            unreachable!();
+            Op::Cd(path) => {
+                if path == "..".to_owned() {
+                    current.pop();
+                } else if path == "/".to_owned() {
+                    current = PathBuf::from("/");
+                } else {
+                    current.push(path);
+                }
+            }
         }
     }
-
-    fs.into_iter()
-        .map(|(p, vs)| (p, vs.iter().map(|(s, _)| s).sum::<usize>()))
-        .collect()
+    fs
 }
 
 fn proc1(lines: &str) -> usize {
