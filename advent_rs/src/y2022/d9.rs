@@ -6,68 +6,65 @@ const FILE_NAME: &str = "data/2022/input9.txt";
 
 type Pos = (i32, i32);
 
-fn load(input: &str) -> Vec<(Pos, i32)> {
+fn load(input: &str) -> Vec<Pos> {
     input
         .lines()
-        .map(|line| {
+        .flat_map(|line| {
             let (dir, count) = line.split_once(" ").unwrap();
-            let count = count.parse::<i32>().unwrap();
-            (dir_pos(dir.chars().next().unwrap()), count)
+            let dir = match dir {
+                "U" => (0, 1),
+                "R" => (1, 0),
+                "L" => (-1, 0),
+                "D" => (0, -1),
+                _ => panic!(),
+            };
+            let count = count.parse::<usize>().unwrap();
+            vec![dir; count]
         })
         .collect::<Vec<_>>()
 }
 
-fn dir_pos(dir: char) -> Pos {
-    match dir {
-        'U' => (0, 1),
-        'R' => (1, 0),
-        'L' => (-1, 0),
-        'D' => (0, -1),
-        _ => panic!(),
-    }
-}
-
-fn follow_move(dif: Pos, mov: Pos) -> Pos {
-    match dif {
+fn tail_follow_move(head_tail_diff: Pos, head_move: Pos) -> Pos {
+    match head_tail_diff {
         (0, 0) => (0, 0),
-        (1, 0) => match mov {
-            (1, 0) | (1, 1) | (1, -1) => mov,
+        (1, 0) => match head_move {
+            (1, 0) | (1, 1) | (1, -1) => head_move,
             _ => (0, 0),
         },
-        (1, 1) => match mov {
+        (1, 1) => match head_move {
             (1, 0) | (0, 1) => (1, 1),
             (-1, 1) => (0, 1),
             (1, -1) => (1, 0),
             (1, 1) => (1, 1),
             _ => (0, 0),
         },
-        (0, 1) => match mov {
-            (0, 1) | (1, 1) | (-1, 1) => mov,
+        (0, 1) => match head_move {
+            (0, 1) | (1, 1) | (-1, 1) => head_move,
             _ => (0, 0),
         },
-        (-1, 1) => match mov {
+        (-1, 1) => match head_move {
             (-1, 0) | (0, 1) => (-1, 1),
             (1, 1) => (0, 1),
             (-1, -1) => (-1, 0),
             (-1, 1) => (-1, 1),
             _ => (0, 0),
         },
-        (-1, 0) => match mov {
-            (-1, 0) | (-1, 1) | (-1, -1) => mov,
+        (-1, 0) => match head_move {
+            (-1, 0) | (-1, 1) | (-1, -1) => head_move,
             _ => (0, 0),
         },
-        (-1, -1) => match mov {
+        (-1, -1) => match head_move {
             (-1, 0) | (0, -1) => (-1, -1),
             (-1, 1) => (-1, 0),
             (1, -1) => (0, -1),
             (-1, -1) => (-1, -1),
             _ => (0, 0),
         },
-        (0, -1) => match mov {
-            (0, -1) | (-1, -1) | (1, -1) => mov,
+        (0, -1) => match head_move {
+            (0, -1) | (-1, -1) | (1, -1) => head_move,
             _ => (0, 0),
         },
-        (1, -1) => match mov {
+        (1, -1) => match head_move {
             (1, 0) | (0, -1) => (1, -1),
             (-1, -1) => (0, -1),
             (1, 1) => (1, 0),
@@ -78,7 +75,7 @@ fn follow_move(dif: Pos, mov: Pos) -> Pos {
     }
 }
 
-fn trace(path: Vec<(Pos, i32)>, snake: &mut Vec<Pos>) -> usize {
+fn trace(path: Vec<Pos>, snake: &mut Vec<Pos>) -> usize {
     let length = snake.len();
 
     let mut ts = HashSet::new();
@@ -86,27 +83,24 @@ fn trace(path: Vec<(Pos, i32)>, snake: &mut Vec<Pos>) -> usize {
 
     println!("{:?}", &snake);
 
-    for (dir, count) in path {
-        for n in 0..count {
-            let (mut mx, mut my) = dir;
-            for i in 1..snake.len() {
-                let (dx, dy) = (snake[i - 1].0 - snake[i].0, snake[i - 1].1 - snake[i].1);
+    for (mut mx, mut my) in path {
+        for i in 1..snake.len() {
+            let (dx, dy) = (snake[i - 1].0 - snake[i].0, snake[i - 1].1 - snake[i].1);
 
-                snake[i - 1].0 += mx;
-                snake[i - 1].1 += my;
+            snake[i - 1].0 += mx;
+            snake[i - 1].1 += my;
 
-                (mx, my) = follow_move((dx, dy), (mx, my));
+            (mx, my) = tail_follow_move((dx, dy), (mx, my));
 
-                if mx == 0 && my == 0 {
-                    break;
-                } else if i == length - 1 {
-                    snake[i].0 += mx;
-                    snake[i].1 += my;
-                    ts.insert((snake[i].0, snake[i].1));
-                }
+            if mx == 0 && my == 0 {
+                break;
+            } else if i == length - 1 {
+                snake[i].0 += mx;
+                snake[i].1 += my;
+                ts.insert((snake[i].0, snake[i].1));
             }
-            println!("{:?} {:?}, {}/{}", &snake, dir, n, count);
         }
+        println!("{:?} {:?}", &snake, (mx, my));
     }
 
     ts.iter().count()
