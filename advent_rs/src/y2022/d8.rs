@@ -1,15 +1,3 @@
-use std::borrow::BorrowMut;
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
-
-use nom::branch::alt;
-use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, anychar, digit1, newline, not_line_ending, space1};
-use nom::multi::{separated_list0, separated_list1};
-use nom::sequence::separated_pair;
-use nom::IResult;
-use regex::Regex;
-
 use crate::read_file;
 
 const FILE_NAME: &str = "data/2022/input8.txt";
