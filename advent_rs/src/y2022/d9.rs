@@ -81,9 +81,8 @@ fn trace(path: Vec<Pos>, snake: &mut Vec<Pos>) -> usize {
     let mut ts = HashSet::new();
     ts.insert((0, 0));
 
-    println!("{:?}", &snake);
-
     for (mut mx, mut my) in path {
+        println!("{:?} {:?}", &snake, (mx, my));
         for i in 1..snake.len() {
             let (dx, dy) = (snake[i - 1].0 - snake[i].0, snake[i - 1].1 - snake[i].1);
 
@@ -100,8 +99,9 @@ fn trace(path: Vec<Pos>, snake: &mut Vec<Pos>) -> usize {
                 ts.insert((snake[i].0, snake[i].1));
             }
         }
-        println!("{:?} {:?}", &snake, (mx, my));
     }
+
+    println!("{:?}", &snake);
 
     ts.iter().count()
 }
