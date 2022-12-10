@@ -92,8 +92,6 @@ fn proc1(input: &str) -> i32 {
         }
     }
 
-    // dbg!(&strength);
-
     strength.iter().sum()
 }
 
@@ -103,41 +101,47 @@ fn quiz1() -> i32 {
 }
 
 fn in_sprite(cycle: usize, sprite: i32) -> bool {
-    let c = (cycle % 40) as i32;
-    (sprite - 1..=sprite + 1).contains(&c)
+    let c = cycle as i32;
+    sprite - 1 <= c && c <= sprite + 1
 }
 
 fn proc2(input: &str) -> String {
-    let instructions = load(input);
+    const ROW: usize = 40;
+    const COL: usize = 6;
 
-    let mut ti = 0;
-    let mut acc_i = instructions[ti].cycle();
+    let instructions = load(input);
 
     let mut crt = vec!['.'; 240];
     let mut sprite = 1;
+    let mut ti = 0;
+    let mut acc_ins_cycle = instructions[ti].cycle();
 
     for cycle in 0..crt.len() {
-        if cycle >= acc_i {
+        if cycle >= acc_ins_cycle {
             let ins = &instructions[ti];
             if let Instruction::Addx(x) = ins {
                 sprite += x;
             }
         }
 
-        if in_sprite(cycle, sprite) {
+        if in_sprite(cycle % ROW, sprite) {
             crt[cycle] = '#';
         }
 
-        if cycle >= acc_i {
+        if cycle >= acc_ins_cycle {
             ti += 1;
-            acc_i += instructions[ti].cycle();
+            acc_ins_cycle += instructions[ti].cycle();
         }
     }
 
+    to_screen(crt, ROW, COL)
+}
+
+fn to_screen(mut crt: Vec<char>, row: usize, col: usize) -> String {
     let mut ret = String::new();
 
-    for _ in 0..6 {
-        let (line, sub_crt) = crt.split_at(40);
+    for _ in 0..col {
+        let (line, sub_crt) = crt.split_at(row);
         let head = line.iter().collect::<String>();
         ret.push_str(&head);
         ret.push('\n');
