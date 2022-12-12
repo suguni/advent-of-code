@@ -18,10 +18,10 @@ enum Op {
 }
 
 impl Op {
-    fn eval(&self, v: u32, rh: u32) -> u32 {
+    fn eval(&self, v: u32, rh: u32) -> u64 {
         match self {
-            Op::Plus => v + rh,
-            Op::Multiply => v * rh,
+            Op::Plus => v as u64 + rh as u64,
+            Op::Multiply => v as u64 * rh as u64,
         }
     }
 }
@@ -151,7 +151,7 @@ fn proc1(input: &str) -> usize {
                     Rh::Old => w,
                 };
 
-                let worry = monkey.op.eval(w, op_val) / 3;
+                let worry = (monkey.op.eval(w, op_val) / 3) as u32;
                 let i = if worry % monkey.divisor == 0 {
                     monkey.case_t
                 } else {
@@ -183,7 +183,10 @@ fn proc2(input: &str) -> usize {
     let len = monkeys.len();
     let mut inspect = vec![0; len];
 
-    for round in 0..20 {
+    // 흠................
+    let dv: u64 = monkeys.iter().map(|monkey| monkey.divisor).product::<u32>() as u64;
+
+    for round in 0..10000 {
         for i in 0..monkeys.len() {
             let monkey = &mut monkeys[i];
             let mut items = &mut monkey.items;
@@ -197,7 +200,7 @@ fn proc2(input: &str) -> usize {
                     Rh::Old => w,
                 };
 
-                let worry = monkey.op.eval(w, op_val) / 11;
+                let worry = (monkey.op.eval(w, op_val) % dv) as u32;
                 let i = if worry % monkey.divisor == 0 {
                     monkey.case_t
                 } else {
@@ -213,11 +216,13 @@ fn proc2(input: &str) -> usize {
             }
         }
 
-        println!("{inspect:?}");
+        let r = round + 1;
+        if r >= 1000 && r % 1000 == 0 {
+            println!("{r}: {inspect:?}");
+        }
     }
 
     inspect.sort();
-    println!("{inspect:?}");
     inspect[len - 1] * inspect[len - 2]
 }
 
@@ -273,21 +278,20 @@ Monkey 3:
 
     #[test]
     fn test_proc2() {
-        assert_eq!(proc2(INPUT), 10605);
+        assert_eq!(proc2(INPUT), 2713310158);
     }
 
     #[test]
-    #[ignore]
-    fn test_quiz2() {}
+    fn test_quiz2() {
+        assert_eq!(quiz2(), 35270398814);
+    }
 
     #[test]
-    #[ignore]
     fn test_proc1() {
         assert_eq!(proc1(INPUT), 10605);
     }
 
     #[test]
-    #[ignore]
     fn test_quiz1() {
         assert_eq!(quiz1(), 316888);
     }
