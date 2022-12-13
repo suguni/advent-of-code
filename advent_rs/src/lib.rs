@@ -5,6 +5,7 @@ mod y2021;
 mod y2022;
 
 use std::collections::HashSet;
+use std::convert::TryInto;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::Read;
@@ -74,4 +75,18 @@ macro_rules! set {
             temp_set // Return the populated HashSet
         }
     };
+}
+
+pub fn interpolate_color(c1: [u8; 3], c2: [u8; 3], factor: f32) -> [u8; 3] {
+    (0..3)
+        .map(|i| (c1[i] as f32 + factor * (c2[i] as f32 - c1[i] as f32)).round() as u8)
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap()
+}
+
+#[test]
+fn test_interpolate_color() {
+    let c = interpolate_color([94, 79, 162], [247, 148, 89], 0.5);
+    assert_eq!(c, [171, 114, 126]);
 }
