@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+extern crate core;
+
 mod y2015;
 mod y2021;
 mod y2022;
