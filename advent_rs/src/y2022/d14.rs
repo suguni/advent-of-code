@@ -46,6 +46,43 @@ fn quiz2() -> u32 {
     proc2(&input)
 }
 
+struct Cave {
+    top: i32,
+    right: i32,
+    bottom: i32,
+    left: i32,
+    rocks: HashMap<u32, Vec<u32>>,
+}
+
+fn rock_path(vss: Vec<Vec<(u32, u32)>>) -> Vec<(u32, u32)> {
+    vss.iter()
+        .flat_map(|vs| {
+            vs.iter()
+                .fold(vec![*vs.first().unwrap()], |mut acc, (x, y)| {
+                    let (x1, y1) = acc.last().unwrap();
+                    acc.append(&mut range_vec(*x1, *y1, *x, *y));
+                    acc
+                });
+        })
+        .collect()
+}
+
+fn range_vec(x1: u32, y1: u32, x2: u32, y2: u32) -> Vec<(u32, u32)> {
+    if x1 == x2 {
+        (y1.min(y2)..y1.max(y2))
+            .map(|iy| (x1, iy))
+            .collect::<Vec<(_, _)>>()
+    } else if y1 == y2 {
+        (x1.min(x2)..x1.max(x2))
+            .map(|ix| (ix, y1))
+            .collect::<Vec<(_, _)>>()
+    } else {
+        vec![]
+    }
+}
+
+fn fall((sx, sy): (u32, u32)) {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
