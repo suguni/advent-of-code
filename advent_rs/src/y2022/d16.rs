@@ -74,6 +74,11 @@ fn load(input: &str) -> Vec<Valve> {
         .collect()
 }
 
+/*
+https://graphviz.org/
+http://magjac.com/graphviz-visual-editor/
+https://dreampuf.github.io/GraphvizOnline/
+ */
 fn to_dot(valves: &HashMap<usize, Valve>) -> String {
     let mut graph = "strict graph {\n".to_owned();
     let nodes = valves
@@ -172,98 +177,100 @@ fn to_map(valves: Vec<Valve>) -> HashMap<usize, Valve> {
     valves.into_iter().map(|valve| (valve.idx, valve)).collect()
 }
 
-fn routes(valves: &HashMap<usize, Valve>) {
+fn routes(valves: &HashMap<usize, Valve>) -> u32 {
     let start = valves.iter().find(|(_, v)| v.name == "AA").unwrap().0;
 
     // remains minute, releasing pressure
     let mut routes: Vec<(Vec<usize>, HashSet<usize>, i32, u32)> =
         vec![(vec![*start], set![*start], 30, 0)];
 
+    let mut result: Vec<(Vec<usize>, HashSet<usize>, u32)> = vec![];
+
+    let mut max_pressures = u32::MIN;
+    let mut max_route = vec![];
+    let mut max_opened = set![];
+
     loop {
-        println!("{:?}", routes.len());
+        println!("routes: {:?}", routes.len());
 
-        let mut add: Vec<(Vec<usize>, HashSet<usize>, i32, u32)> = vec![];
-        let mut rem: Vec<usize> = vec![];
+        let mut spawned: Vec<(Vec<usize>, HashSet<usize>, i32, u32)> = vec![];
 
-        for (idx, (route, opened, remains, pressures)) in routes.iter_mut().enumerate() {
-            if *remains <= 0 {
-                continue;
-            }
+        while let Some((route, opened, remains, pressures)) = routes.pop() {
+            let from = route[route.len() - 1];
+            let from_from = if route.len() >= 2 {
+                route[route.len() - 2]
+            } else {
+                usize::MAX
+            };
 
-            let from = route.last().unwrap();
-            let valve = valves.get(from).unwrap();
+            let valve = valves.get(&from).unwrap();
 
             for (next, weight) in valve.nexts.iter() {
-                let mut new_route = route.clone();
-                let mut new_opened = opened.clone();
-                new_route.push(*next);
-                let mut new_remain = *remains - *weight as i32;
-                let mut new_pressure = *pressures;
-
-                if !new_opened.contains(next) {
-                    new_opened.insert(*next);
-                    new_remain -= 1;
-                    if new_remain > 0 {
-                        new_pressure += (new_remain as u32) * valves.get(next).unwrap().rate;
-                    }
+                if valve.nexts.len() > 1 && *next == from_from {
+                    continue;
                 }
 
-                add.push((new_route, new_opened, new_remain, new_pressure));
+                let mut new_remain = remains - *weight as i32;
+                if new_remain <= 0 {
+                    if pressures > max_pressures {
+                        max_pressures = pressures;
+                        max_route = route.clone();
+                        max_opened = opened.clone();
+                    }
+                    continue;
+                }
+
+                let mut new_route = route.clone();
+                new_route.push(*next);
+
+                spawned.push((new_route.clone(), opened.clone(), new_remain, pressures));
+
+                if !opened.contains(next) {
+                    let mut new_opened = opened.clone();
+                    new_opened.insert(*next);
+                    new_remain -= 1;
+                    let new_pressures =
+                        pressures + (new_remain as u32) * valves.get(next).unwrap().rate;
+                    if new_remain == 0 || new_opened.len() == valves.len() {
+                        if new_pressures > max_pressures {
+                            max_pressures = new_pressures;
+                            max_route = new_route;
+                            max_opened = new_opened;
+                        }
+                        continue;
+                    } else {
+                        spawned.push((new_route, new_opened, new_remain, new_pressures));
+                    }
+                }
             }
-            rem.push(idx);
         }
 
-        let r_count = rem.len();
-        let a_count = add.len();
+        println!("spawned : {}", spawned.len());
+        println!("max pressure : {}", max_pressures);
+        println!("routes: {:?}", max_route);
+        println!("opened: {:?}", max_opened);
 
-        if rem.is_empty() {
+        println!("------");
+
+        if spawned.len() == 0 {
             break;
         }
 
-        rem.sort_by(|a, b| b.cmp(a));
-
-        for rm in rem {
-            routes.remove(rm);
-        }
-
-        for nr in add {
-            routes.push(nr)
-        }
-
-        let (_, _, r, p) = routes
-            .iter()
-            .max_by(|(_, _, _, p1), (_, _, _, p2)| p1.cmp(p2))
-            .unwrap();
-
-        let (_, _, r1, p1) = routes
-            .iter()
-            .min_by(|(_, _, _, p1), (_, _, _, p2)| p1.cmp(p2))
-            .unwrap();
-
-        println!(
-            "remove: {}, add: {}, max pressure!!! {}, remaining: {}, min pressure {}, min remaining {}",
-            r_count, a_count, p, r, p1, r1
-        );
+        routes = spawned;
     }
 
-    let (_, _, _, p) = routes
-        .iter()
-        .max_by(|(_, _, _, p1), (_, _, _, p2)| p1.cmp(p2))
-        .unwrap();
-
-    println!("VALUE!!! {}", p);
+    max_pressures
 }
 
-fn proc1(input: &str) -> String {
+fn proc1(input: &str) -> u32 {
     let valves = load(input);
     let mut valves: HashMap<usize, Valve> = to_map(valves);
     compact_valves(&mut valves);
-    routes(&valves);
-
-    to_dot(&valves)
+    println!("{}", to_dot(&valves));
+    routes(&valves)
 }
 
-fn quiz1() -> String {
+fn quiz1() -> u32 {
     let input = read_file(FILE_NAME);
     proc1(&input)
 }
@@ -279,8 +286,14 @@ fn quiz2() -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::set;
+
+    use super::*;
+
+    // AA -> DD -> CC -> BB -> AA ->II -> JJ -> II -> AA -> DD -> EE -> FF _. GG -> HH -> GG -> Ff -> EE -> DD -> CC
+    // AA -> (DD) -> CC -> (BB) -> AA -> (JJ) -> AA -> DD -> EE -> (HH) -> (EE) -> DD -> (CC)
+    // 0  ->  3   ->  2 ->  1   ->  0 ->  9   -> 0  -> 3  -> 4  ->  7   -> 4    -> 3  ->  2
+    // 0,    3,      2,     1,      0,    9,     0,    3,    4,     7,     4,      3,     2, 1, 0, 3, 2, 1
 
     const INPUT: &str = "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
 Valve BB has flow rate=13; tunnels lead to valves CC, AA
@@ -314,54 +327,13 @@ Valve JJ has flow rate=21; tunnel leads to valve II";
     }
 
     #[test]
-    #[ignore]
-    fn test_calculation() {
-        assert_eq!(20 * 3 + 33 * 4 + 54 * 8 + 76 * 4 + 79 * 3 + 81 * 6, 1651);
-    }
-
-    #[test]
-    #[ignore]
-    fn test_to_dot() {
-        let valves = load(INPUT);
-        let mut valves = to_map(valves);
-        compact_valves(&mut valves);
-        assert_eq!(
-            to_dot(&valves),
-            "strict graph {
-    AA [xlabel=0]
-    AA -- { DD, II, BB }
-    BB [xlabel=13]
-    BB -- { CC, AA }
-    CC [xlabel=2]
-    CC -- { DD, BB }
-    DD [xlabel=20]
-    DD -- { CC, AA, EE }
-    EE [xlabel=3]
-    EE -- { FF, DD }
-    FF [xlabel=0]
-    FF -- { EE, GG }
-    GG [xlabel=0]
-    GG -- { FF, HH }
-    HH [xlabel=22]
-    HH -- { GG }
-    II [xlabel=0]
-    II -- { AA, JJ }
-    JJ [xlabel=21]
-    JJ -- { II }
-    AA [shape=box]
-}"
-        )
-    }
-
-    #[test]
-    #[ignore]
     fn test_proc1() {
-        assert_eq!(proc1(INPUT), "".to_owned());
+        assert_eq!(proc1(INPUT), 1651);
     }
 
     #[test]
     fn test_quiz1() {
-        assert_eq!(quiz1(), "".to_owned()); // 2253
+        assert_eq!(quiz1(), 2253);
     }
 
     #[test]
