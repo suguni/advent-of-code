@@ -205,18 +205,58 @@ impl Simulator {
 
     fn play(&mut self, count: usize) -> usize {
         let mut fell_count = 0;
-        loop {
-            if self.tick() {
-                fell_count += 1;
-                if fell_count % 10_000_000 == 0 {
-                    println!("fell count: {fell_count}");
-                }
-                if fell_count >= count {
-                    break;
+        let mut try_count = 0;
+        while fell_count < count {
+            if self.falling_rock.is_none() {
+                let rock_width = self.spawn_rock();
+
+                if self.fast_move(rock_width) {
+                    fell_count += 1;
+                    // self.draw("ok");
+                    continue;
                 }
             }
+
+            while !self.tick() {}
+            // self.draw("try ok");
+
+            fell_count += 1;
+            try_count += 1;
+            if fell_count % 10_000_000 == 0 {
+                println!("fell count: {fell_count}");
+            }
+
+            // println!(
+            //     "try count: {}, ({} / {})",
+            //     try_count as f32 / fell_count as f32,
+            //     try_count,
+            //     fell_count,
+            // );
         }
         self.chamber.rocks_bound.1 as usize
+    }
+
+    fn fast_move(&mut self, rock_width: usize) -> bool {
+        let mut m = 2;
+
+        for _ in 0..4 {
+            let d = self.next_dir();
+            if d == Dir::L && m > 0 {
+                m -= 1;
+            } else if d == Dir::R && m as usize + rock_width < SIZE {
+                m += 1;
+            }
+        }
+
+        self.falling_rock_pos = (
+            m,
+            if self.chamber.is_empty() {
+                0
+            } else {
+                self.chamber.rocks_bound.1
+            },
+        );
+        self.tick_down()
     }
 
     fn draw(&self, msg: &str) {
@@ -272,11 +312,6 @@ impl Simulator {
     }
 
     fn tick(&mut self) -> bool {
-        if self.falling_rock.is_none() {
-            self.spawn_rock();
-            // self.draw("spawned");
-        }
-
         let dir = self.next_dir();
         let (moved, dir) = self.move_rock(dir);
 
@@ -287,6 +322,10 @@ impl Simulator {
         };
         // self.draw(&msg);
 
+        self.tick_down()
+    }
+
+    fn tick_down(&mut self) -> bool {
         let (moved, dir) = self.move_rock(Dir::B);
         // self.draw("fell");
 
@@ -313,8 +352,9 @@ impl Simulator {
         }
     }
 
-    fn spawn_rock(&mut self) {
+    fn spawn_rock(&mut self) -> usize {
         let rock = self.rocks[self.next_rock].clone();
+        let rock_width = rock.width;
         self.falling_rock.replace(rock);
         self.falling_rock_pos = (
             2,
@@ -326,6 +366,7 @@ impl Simulator {
         );
         self.next_rock += 1;
         self.next_rock %= self.rocks.len();
+        rock_width
     }
 }
 
@@ -358,7 +399,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     fn test_proc2() {
         let mut simulator = Simulator::new(INPUT, rocks());
         assert_eq!(simulator.play(1000000000000), 1514285714288);
