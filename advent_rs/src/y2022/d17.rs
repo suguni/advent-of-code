@@ -50,19 +50,19 @@ type Bound = (i32, i32, i32, i32);
 type Coord = (i32, i32);
 
 struct Chamber {
-    rocks: Vec<Rock>,
+    // rocks: Vec<Rock>,
     grid: Vec<bool>,
     rocks_bound: Bound,
 }
 
-fn collection_bound((l1, t1, r1, b1): Bound, (l2, t2, r2, b2): Bound) -> bool {
-    !(l1 < r2 || r1 < l2 || t1 < b2 || b1 > t2)
+fn sep_bound((l1, t1, r1, b1): Bound, (l2, t2, r2, b2): Bound) -> bool {
+    l1 > r2 || r1 < l2 || t1 < b2 || b1 > t2
 }
 
 impl Chamber {
     fn new() -> Self {
         Self {
-            rocks: vec![],
+            // rocks: vec![],
             grid: vec![],
             rocks_bound: (0, 0, 0, 0),
         }
@@ -82,7 +82,7 @@ impl Chamber {
             return true;
         }
 
-        if self.grid.is_empty() {
+        if self.grid.is_empty() || sep_bound((rl, rt, rr, rb), self.rocks_bound) {
             return false;
         }
 
@@ -145,11 +145,10 @@ impl Chamber {
                 }
             }
         }
-
-        self.rocks.push(rock);
     }
 }
 
+#[derive(Clone)]
 struct Rock {
     grid: Vec<bool>,
     width: usize,
@@ -157,10 +156,10 @@ struct Rock {
 }
 
 impl Rock {
-    fn new(pattern: usize) -> Self {
-        let width = ROCKS[pattern].lines().next().unwrap().chars().count();
-        let height = ROCKS[pattern].lines().count();
-        let grid = ROCKS[pattern]
+    fn new(pattern: &str) -> Self {
+        let width = pattern.lines().next().unwrap().chars().count();
+        let height = pattern.lines().count();
+        let grid = pattern
             .lines()
             .rev()
             .flat_map(|line| line.chars().map(|c| c == '#'))
@@ -176,6 +175,7 @@ impl Rock {
 struct Simulator {
     chamber: Chamber,
 
+    rocks: Vec<Rock>,
     falling_rock: Option<Rock>,
     falling_rock_pos: Coord,
     next_rock: usize,
@@ -185,13 +185,14 @@ struct Simulator {
 }
 
 impl Simulator {
-    fn new(pattern: &str) -> Simulator {
+    fn new(pattern: &str, rocks: Vec<Rock>) -> Simulator {
         let move_patterns = pattern.chars().map(|c| Dir::new_from(c)).collect();
 
         let chamber = Chamber::new();
 
         Simulator {
             chamber,
+            rocks,
 
             falling_rock: None,
             falling_rock_pos: (0, 0),
@@ -207,7 +208,7 @@ impl Simulator {
         loop {
             if self.tick() {
                 fell_count += 1;
-                if fell_count % 100_000_000 == 0 {
+                if fell_count % 10_000_000 == 0 {
                     println!("fell count: {fell_count}");
                 }
                 if fell_count >= count {
@@ -276,7 +277,9 @@ impl Simulator {
             // self.draw("spawned");
         }
 
-        let (moved, dir) = self.move_rock();
+        let dir = self.next_dir();
+        let (moved, dir) = self.move_rock(dir);
+
         let msg = if moved {
             format!("moved to {:?}", dir)
         } else {
@@ -284,7 +287,7 @@ impl Simulator {
         };
         // self.draw(&msg);
 
-        let moved = self.fall_rock();
+        let (moved, dir) = self.move_rock(Dir::B);
         // self.draw("fell");
 
         if !moved {
@@ -296,8 +299,7 @@ impl Simulator {
         false
     }
 
-    fn move_rock(&mut self) -> (bool, Dir) {
-        let dir = self.next_dir();
+    fn move_rock(&mut self, dir: Dir) -> (bool, Dir) {
         if let Some(rock) = self.falling_rock.as_ref() {
             let new_pos = self.chamber.move_rock(rock, self.falling_rock_pos, dir);
             if self.falling_rock_pos != new_pos {
@@ -311,22 +313,8 @@ impl Simulator {
         }
     }
 
-    fn fall_rock(&mut self) -> bool {
-        if let Some(rock) = self.falling_rock.as_ref() {
-            let new_pos = self.chamber.fall_rock(rock, self.falling_rock_pos);
-            if self.falling_rock_pos == new_pos {
-                false
-            } else {
-                self.falling_rock_pos = new_pos;
-                true
-            }
-        } else {
-            panic!()
-        }
-    }
-
     fn spawn_rock(&mut self) {
-        let rock = Rock::new(self.next_rock);
+        let rock = self.rocks[self.next_rock].clone();
         self.falling_rock.replace(rock);
         self.falling_rock_pos = (
             2,
@@ -337,14 +325,18 @@ impl Simulator {
             },
         );
         self.next_rock += 1;
-        self.next_rock %= ROCKS.len();
+        self.next_rock %= self.rocks.len();
     }
 }
 
 fn quiz1() -> usize {
     let input = read_file(FILE_NAME);
-    let mut simulator = Simulator::new(&input);
+    let mut simulator = Simulator::new(&input, rocks());
     simulator.play(2022)
+}
+
+fn rocks() -> Vec<Rock> {
+    ROCKS.map(|pattern| Rock::new(pattern)).to_vec()
 }
 
 #[cfg(test)]
@@ -356,7 +348,7 @@ mod tests {
 
     #[test]
     fn test_proc1() {
-        let mut simulator = Simulator::new(INPUT);
+        let mut simulator = Simulator::new(INPUT, rocks());
         assert_eq!(simulator.play(2022), 3068);
     }
 
@@ -368,7 +360,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_proc2() {
-        let mut simulator = Simulator::new(INPUT);
+        let mut simulator = Simulator::new(INPUT, rocks());
         assert_eq!(simulator.play(1000000000000), 1514285714288);
     }
 }
