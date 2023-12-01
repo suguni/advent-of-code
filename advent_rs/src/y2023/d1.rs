@@ -5,14 +5,14 @@ use nom::{FindSubstring, Slice};
 use std::iter::Iterator;
 use std::ops::Index;
 
+const QUIZ_INPUT: &str = include_str!("../../data/2023/f1.txt");
+
 fn quiz1() -> u32 {
-    let text = read_file("data/2023/f1.txt");
-    cal_values(&text, extract1)
+    cal_values(&QUIZ_INPUT, extract1)
 }
 
 fn quiz2() -> u32 {
-    let text = read_file("data/2023/f1.txt");
-    cal_values(&text, extract2)
+    cal_values(&QUIZ_INPUT, extract2)
 }
 
 fn cal_values(data: &str, tokenizer: fn(&str) -> Vec<u32>) -> u32 {
