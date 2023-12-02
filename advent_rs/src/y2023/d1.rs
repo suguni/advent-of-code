@@ -2,100 +2,56 @@
 
 use crate::read_file;
 use nom::{FindSubstring, Slice};
-use std::iter::Iterator;
+use std::iter::{Enumerate, FilterMap, Iterator};
 use std::ops::Index;
+use std::str::Chars;
 
 const QUIZ_INPUT: &str = include_str!("../../data/2023/f1.txt");
-
-fn quiz1() -> u32 {
-    cal_values(&QUIZ_INPUT, extract1)
-}
-
-fn quiz2() -> u32 {
-    cal_values(&QUIZ_INPUT, extract2)
-}
-
-fn cal_values(data: &str, tokenizer: fn(&str) -> Vec<u32>) -> u32 {
-    data.lines()
-        .map(|line| {
-            let ns = tokenizer(line);
-            let v1 = ns.first().unwrap();
-            let v2 = ns.last().unwrap();
-            v1 * 10 + v2
-        })
-        .sum()
-}
-
-fn extract1(line: &str) -> Vec<u32> {
-    let chars = line.chars().collect::<Vec<char>>();
-
-    let v1 = line
-        .chars()
-        .find(|c| c.is_numeric())
-        .map(|c| c.to_digit(10).unwrap())
-        .unwrap();
-
-    let v2 = line
-        .chars()
-        .rfind(|c| c.is_numeric())
-        .map(|c| c.to_digit(10).unwrap())
-        .unwrap();
-
-    vec![v1, v2]
-}
 
 const DIGITS: [&str; 9] = [
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
 ];
 
-fn extract2(line: &str) -> Vec<u32> {
-    let digits: Vec<Vec<char>> = DIGITS.iter().map(|&s| s.chars().collect()).collect();
+fn quiz1() -> u32 {
+    cal_values(&QUIZ_INPUT, to_ns1)
+}
 
-    let mut result = vec![];
+fn quiz2() -> u32 {
+    cal_values(&QUIZ_INPUT, to_ns2)
+}
 
-    let chars = line.chars().collect::<Vec<char>>();
+fn cal_values<F: Fn(&str) -> Box<dyn Iterator<Item = u32> + '_>>(data: &str, ns_iter: F) -> u32 {
+    data.lines()
+        .map(move |line| {
+            let mut ns = ns_iter(line);
+            let (v1, v2) = extract(ns);
+            v1 * 10 + v2
+        })
+        .sum()
+}
 
-    let mut pos = 0_usize;
-    loop {
-        if chars[pos].is_numeric() {
-            result.push(chars[pos].to_digit(10).unwrap());
-            break;
-        } else {
-            let found = start_with_digits(chars[pos..].iter().collect());
-            if let Some(idx) = found {
-                result.push((idx + 1) as u32);
-                break;
-            } else {
-                if pos == chars.len() - 1 {
-                    break;
-                } else {
-                    pos += 1;
-                }
-            }
-        }
-    }
+fn extract(mut ns: Box<dyn Iterator<Item = u32> + '_>) -> (u32, u32) {
+    let v1 = ns.next().unwrap();
+    let v2 = ns.last().or(Some(v1)).unwrap();
+    (v1, v2)
+}
 
-    let mut pos = chars.len() - 1;
-    loop {
-        if chars[pos].is_numeric() {
-            result.push(chars[pos].to_digit(10).unwrap());
-            break;
-        } else {
-            let found = start_with_digits(chars[pos..].iter().collect());
-            if let Some(idx) = found {
-                result.push((idx + 1) as u32);
-                break;
-            } else {
-                if pos == 0 {
-                    break;
-                } else {
-                    pos -= 1;
-                }
-            }
-        }
-    }
+fn to_ns1(line: &str) -> Box<dyn Iterator<Item = u32> + '_> {
+    Box::new(line.chars().filter_map(|c| c.to_digit(10)))
+}
 
-    result
+fn to_ns2(line: &str) -> Box<dyn Iterator<Item = u32> + '_> {
+    let mut ns = line.chars().enumerate().filter_map(move |(i, c)| {
+        c.to_digit(10).or_else(|| {
+            DIGITS
+                .iter()
+                .enumerate()
+                .find(|&(idx, &s)| line[i..].starts_with(s))
+                .map(|(idx, _)| (idx + 1) as u32)
+        })
+    });
+
+    Box::new(ns)
 }
 
 fn start_with_digits(chars: String) -> Option<usize> {
@@ -117,22 +73,22 @@ mod tests {
 pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet";
-        assert_eq!(cal_values(data, extract1), 142);
+        assert_eq!(cal_values(data, to_ns1), 142);
     }
 
     #[test]
-    fn test_extractor() {
-        assert_eq!(extract2("twone"), vec![2, 1]);
-        assert_eq!(extract2("two1nine"), vec![2, 9]);
-        assert_eq!(extract2("sixrctqxdpkxpfdkglvthreenine47rzs"), vec![6, 7]);
-        assert_eq!(extract2("7c"), vec![7, 7]);
+    fn test_to_num2_extractor() {
+        assert_eq!(extract(to_ns2("twone")), (2, 1));
+        assert_eq!(extract(to_ns2("two1nine")), (2, 9));
+        assert_eq!(extract(to_ns2("sixrctqxdpkxpfdkglvthreenine47rzs")), (6, 7));
+        assert_eq!(extract(to_ns2("7c")), (7, 7));
         assert_eq!(
-            extract2("eighthjbqsbz6ndpkdlnpmpxqvpmsrbvksnnleightnzxmjg"),
-            vec![8, 8]
+            extract(to_ns2("eighthjbqsbz6ndpkdlnpmpxqvpmsrbvksnnleightnzxmjg")),
+            (8, 8)
         );
         assert_eq!(
-            extract2("mcqcmxxzcmpzrz4ntgnsgqbqjmkzpqvxtvsixrzzr3seven"),
-            vec![4, 7]
+            extract(to_ns2("mcqcmxxzcmpzrz4ntgnsgqbqjmkzpqvxtvsixrzzr3seven")),
+            (4, 7)
         );
     }
 
@@ -145,7 +101,7 @@ xtwone3four
 4nineeightseven2
 zoneight234
 7pqrstsixteen";
-        assert_eq!(cal_values(data, extract2), 281);
+        assert_eq!(cal_values(data, to_ns2), 281);
     }
 
     #[test]
