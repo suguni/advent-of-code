@@ -106,16 +106,14 @@ fn find_adjacency_numbers(
                 } else {
                     None
                 }
-            } else {
-                if (*r != 0 && *r - 1 == *row) || (*r != rows - 1 && *r + 1 == *row) {
-                    if *sc <= *col + 1 && (*col != 0 && *ec >= *col - 1) {
-                        Some((*num, Pos(*r, *sc), Pos(*r, *ec)))
-                    } else {
-                        None
-                    }
+            } else if (*r != 0 && *r - 1 == *row) || (*r != rows - 1 && *r + 1 == *row) {
+                if *sc <= *col + 1 && (*col != 0 && *ec >= *col - 1) {
+                    Some((*num, Pos(*r, *sc), Pos(*r, *ec)))
                 } else {
                     None
                 }
+            } else {
+                None
             }
         })
         .collect()
