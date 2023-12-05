@@ -16,7 +16,7 @@ use std::num::ParseIntError;
 use std::ops::Index;
 use std::str::{Chars, FromStr};
 
-const QUIZ_INPUT: &str = include_str!("../../data/2023/f2.txt");
+const QUIZ_INPUT: &str = include_str!("../../data/2023/input2.txt");
 
 fn quiz1() -> u32 {
     solve1(QUIZ_INPUT, (12, 13, 14))

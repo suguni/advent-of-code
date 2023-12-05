@@ -6,7 +6,7 @@ use std::iter::{Enumerate, FilterMap, Iterator};
 use std::ops::Index;
 use std::str::Chars;
 
-const QUIZ_INPUT: &str = include_str!("../../data/2023/f1.txt");
+const QUIZ_INPUT: &str = include_str!("../../data/2023/input1.txt");
 
 const DIGITS: [&str; 9] = [
     "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
