@@ -6,7 +6,7 @@ use nom::IResult;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-const INPUT: &str = include_str!("../../data/2023/input6.txt");
+const INPUT: &str = include_str!("../../data/2023/input7.txt");
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 enum Type {
