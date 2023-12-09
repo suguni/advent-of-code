@@ -96,9 +96,7 @@ fn count_steps<T: Num + Add<Output = T>>(
 fn solve2(data: &str) -> u64 {
     let (_, docs) = load(data).unwrap();
 
-    let mut currents = find_starts(&docs.networks);
-
-    currents
+    find_starts(&docs.networks)
         .iter()
         .map(|current| count_steps(&docs, current, |v| v.ends_with("Z")))
         .reduce(|acc, n| num::integer::lcm(acc, n))
