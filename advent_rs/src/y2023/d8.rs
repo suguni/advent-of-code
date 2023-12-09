@@ -1,6 +1,6 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::character::complete::{alpha1, newline, space1};
+use nom::character::complete::{alpha1, alphanumeric1, newline, space1};
 use nom::combinator::map;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{separated_pair, tuple};
@@ -12,7 +12,6 @@ const INPUT: &str = include_str!("../../data/2023/input8.txt");
 #[derive(Debug, Eq, PartialEq)]
 struct Docs {
     inst: String,
-    start: String,
     networks: HashMap<String, LR>,
 }
 
@@ -25,28 +24,27 @@ struct LR {
 fn load(data: &str) -> IResult<&str, Docs> {
     map(
         separated_pair(alpha1, tuple((newline, newline)), networks_parser),
-        |(inst, (start, networks))| Docs {
+        |(inst, networks)| Docs {
             inst: inst.to_string(),
-            start,
             networks,
         },
     )(data)
 }
 
-fn networks_parser(data: &str) -> IResult<&str, (String, HashMap<String, LR>)> {
+fn networks_parser(data: &str) -> IResult<&str, HashMap<String, LR>> {
     map(separated_list1(newline, network_parser), |vs| {
-        (vs[0].0.clone(), vs.into_iter().collect())
+        vs.into_iter().collect()
     })(data)
 }
 
 fn network_parser(line: &str) -> IResult<&str, (String, LR)> {
     map(
         tuple((
-            alpha1,
+            alphanumeric1,
             tuple((space1, tag("="), space1, tag("("))),
-            alpha1,
+            alphanumeric1,
             tuple((tag(","), space1)),
-            alpha1,
+            alphanumeric1,
             tag(")"),
         )),
         |t: (&str, _, &str, _, &str, _)| {
@@ -61,29 +59,74 @@ fn network_parser(line: &str) -> IResult<&str, (String, LR)> {
     )(line)
 }
 
-fn solve1(data: &str) -> u32 {
+fn solve1(data: &str) -> u64 {
     let (_, docs) = load(data).unwrap();
+    count_steps(&docs, "AAA", |s| s == "ZZZ")
+}
 
-    let mut steps: usize = 0;
-    let mut current: String = "AAA".to_string();
+fn count_steps(docs: &Docs, start: &str, is_ending: fn(&str) -> bool) -> u64 {
+    let mut current = start;
+    let mut steps: u64 = 0;
 
     for c in docs.inst.chars().cycle() {
-        if current == "ZZZ".to_string() {
+        if is_ending(current) {
             break;
         }
 
-        let LR { left, right } = docs.networks.get(&current).expect("");
+        let LR { left, right } = docs.networks.get(current).expect("");
 
         if c == 'L' {
-            current = left.clone();
+            current = left;
         } else {
-            current = right.clone();
+            current = right;
         }
 
         steps += 1;
     }
 
-    steps as u32
+    steps
+}
+
+fn solve2(data: &str) -> u64 {
+    let (_, docs) = load(data).unwrap();
+
+    let mut currents = find_starts(&docs.networks);
+
+    let steps = currents
+        .iter()
+        .map(|current| count_steps(&docs, current, |v| v.ends_with("Z")))
+        .collect::<Vec<u64>>();
+
+    lcm(steps)
+}
+
+fn find_starts(networks: &HashMap<String, LR>) -> Vec<String> {
+    networks
+        .keys()
+        .filter_map(|key| {
+            if key.ends_with("A") {
+                Some(key.clone())
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn lcm(ns: Vec<u64>) -> u64 {
+    ns.into_iter()
+        .reduce(|acc, n| acc * n / gcd(acc, n))
+        .unwrap()
+}
+
+fn gcd(mut a: u64, mut b: u64) -> u64 {
+    let mut c = 0;
+    while b != 0 {
+        c = a % b;
+        a = b;
+        b = c;
+    }
+    a
 }
 
 #[cfg(test)]
@@ -116,6 +159,27 @@ ZZZ = (ZZZ, ZZZ)";
     #[test]
     fn quiz1_test() {
         assert_eq!(solve1(INPUT), 12361);
+    }
+
+    const EX3: &str = "LR
+
+11A = (11B, XXX)
+11B = (XXX, 11Z)
+11Z = (11B, XXX)
+22A = (22B, XXX)
+22B = (22C, 22C)
+22C = (22Z, 22Z)
+22Z = (22B, 22B)
+XXX = (XXX, XXX)";
+
+    #[test]
+    fn solve2_test() {
+        assert_eq!(solve2(EX3), 6);
+    }
+
+    #[test]
+    fn quiz2_test() {
+        assert_eq!(solve2(INPUT), 18215611419223);
     }
 
     #[test]
