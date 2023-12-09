@@ -5,7 +5,9 @@ use nom::combinator::map;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{separated_pair, tuple};
 use nom::IResult;
+use num::Num;
 use std::collections::HashMap;
+use std::ops::Add;
 
 const INPUT: &str = include_str!("../../data/2023/input8.txt");
 
@@ -59,14 +61,18 @@ fn network_parser(line: &str) -> IResult<&str, (String, LR)> {
     )(line)
 }
 
-fn solve1(data: &str) -> u64 {
+fn solve1(data: &str) -> u32 {
     let (_, docs) = load(data).unwrap();
     count_steps(&docs, "AAA", |s| s == "ZZZ")
 }
 
-fn count_steps(docs: &Docs, start: &str, is_ending: fn(&str) -> bool) -> u64 {
+fn count_steps<T: Num + Add<Output = T>>(
+    docs: &Docs,
+    start: &str,
+    is_ending: fn(&str) -> bool,
+) -> T {
     let mut current = start;
-    let mut steps: u64 = 0;
+    let mut steps: T = T::zero();
 
     for c in docs.inst.chars().cycle() {
         if is_ending(current) {
@@ -81,7 +87,7 @@ fn count_steps(docs: &Docs, start: &str, is_ending: fn(&str) -> bool) -> u64 {
             current = right;
         }
 
-        steps += 1;
+        steps = steps + T::one();
     }
 
     steps
@@ -92,12 +98,11 @@ fn solve2(data: &str) -> u64 {
 
     let mut currents = find_starts(&docs.networks);
 
-    let steps = currents
+    currents
         .iter()
         .map(|current| count_steps(&docs, current, |v| v.ends_with("Z")))
-        .collect::<Vec<u64>>();
-
-    lcm(steps)
+        .reduce(|acc, n| num::integer::lcm(acc, n))
+        .unwrap()
 }
 
 fn find_starts(networks: &HashMap<String, LR>) -> Vec<String> {
@@ -111,22 +116,6 @@ fn find_starts(networks: &HashMap<String, LR>) -> Vec<String> {
             }
         })
         .collect()
-}
-
-fn lcm(ns: Vec<u64>) -> u64 {
-    ns.into_iter()
-        .reduce(|acc, n| acc * n / gcd(acc, n))
-        .unwrap()
-}
-
-fn gcd(mut a: u64, mut b: u64) -> u64 {
-    let mut c = 0;
-    while b != 0 {
-        c = a % b;
-        a = b;
-        b = c;
-    }
-    a
 }
 
 #[cfg(test)]
