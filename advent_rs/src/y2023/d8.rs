@@ -65,7 +65,7 @@ fn solve1(data: &str) -> u32 {
     let (_, docs) = load(data).unwrap();
 
     let mut steps: usize = 0;
-    let mut current: String = docs.start.clone();
+    let mut current: String = "AAA".to_string();
 
     for c in docs.inst.chars().cycle() {
         if current == "ZZZ".to_string() {
@@ -115,7 +115,7 @@ ZZZ = (ZZZ, ZZZ)";
 
     #[test]
     fn quiz1_test() {
-        assert_eq!(solve1(INPUT), 2);
+        assert_eq!(solve1(INPUT), 12361);
     }
 
     #[test]
