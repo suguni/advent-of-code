@@ -201,6 +201,7 @@ fn enclosed(map: &Map, boundary: &HashSet<Position>, path: &Vec<Position>) -> Ha
     for i in 1..path.len() {
         let p = path[i - 1];
 
+        // FIXME find ccw / cw
         let diffs = diffs_counter_clock(path[i - 1], map.tiles[p.0][p.1], path[i]);
 
         for diff in diffs {
