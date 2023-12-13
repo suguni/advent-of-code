@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::space1;
@@ -5,6 +6,7 @@ use nom::combinator::map;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::separated_pair;
 use nom::IResult;
+use std::cmp::min;
 use std::ptr::replace;
 
 const INPUT: &str = include_str!("../../data/2023/input12.txt");
@@ -30,33 +32,31 @@ fn nums_parser(line: &str) -> IResult<&str, Vec<u32>> {
     )(line)
 }
 
-fn find_positions(marks: &[char], count: usize) -> (Vec<usize>, Option<usize>) {
+fn find_positions(marks: &[char], count: usize) -> Vec<usize> {
     let mut pos = vec![];
-    let mut found = None;
 
-    for (index, region) in marks.windows(count).enumerate() {
-        if index > 0 && marks[index - 1] == '#' {
-            continue;
-        }
+    let mut already_sharp_matched = false;
 
-        if index < marks.len() - count && marks[index + count] == '#' {
-            continue;
-        }
+    let end = marks
+        .iter()
+        .position(|c| *c == '#')
+        .map(|p| min(p + count, marks.len()))
+        .unwrap_or(marks.len());
 
-        if region.iter().all(|c| *c == '#') {
-            found = Some(index);
-            break;
-        }
+    for (index, region) in marks[..end].windows(count).enumerate() {
+        let sharp_matched = region
+            .iter()
+            .map(|c| if *c == '?' { '#' } else { *c })
+            .all(|c| c == '#');
 
-        if region.iter().all(|c| *c == '?') {
+        let next_is_not_sharp = index + count == marks.len() || marks[index + count] != '#';
+
+        if sharp_matched && next_is_not_sharp {
             pos.push(index);
-        } else if region.iter().all(|c| *c == '#' || *c == '?') {
-            pos.push(index);
-            break;
         }
     }
 
-    (pos, found)
+    pos
 }
 
 fn construct_str(marks: &[char], start: usize, count: usize) -> Vec<char> {
@@ -90,13 +90,9 @@ fn clean_up(marks: &mut Vec<char>, start: usize) {
 fn find_and_replace(start: usize, marks: &[char], count: usize) -> Vec<(usize, Vec<char>)> {
     let mut result = vec![];
 
-    let (ps, last) = find_positions(&marks[start..], count);
+    let ps = find_positions(&marks[start..], count);
 
     for pos in ps.iter().map(|p| *p + start).into_iter() {
-        result.push((pos + count, construct_str(marks, pos, count)));
-    }
-
-    if let Some(pos) = last {
         result.push((pos + count, construct_str(marks, pos, count)));
     }
 
@@ -133,8 +129,10 @@ fn find_all(marks: Vec<char>, counts: Vec<u32>) -> Vec<Vec<char>> {
             if next_start >= replaced_marks.len() && counts.len() > 1 {
                 // drop
             } else if counts.len() == 1 {
-                clean_up(&mut replaced_marks, next_start);
-                result.push(replaced_marks);
+                if !replaced_marks[next_start..].contains(&'#') {
+                    clean_up(&mut replaced_marks, next_start);
+                    result.push(replaced_marks);
+                }
             } else {
                 jobs.push((next_start, replaced_marks, &counts[1..]));
             }
@@ -174,9 +172,9 @@ mod tests {
         assert_eq!(solve1(EXAMPLE), 21);
     }
 
-    // #[test]
+    #[test]
     fn test_quiz1() {
-        assert_eq!(solve1(INPUT), 21);
+        assert_eq!(solve1(INPUT), 7361);
     }
 
     #[test]
@@ -259,8 +257,59 @@ mod tests {
             .collect::<HashSet<String>>();
 
         assert_eq!(founds, set!["#.#.###".to_string()]);
+    }
 
-        let founds = find_all(to_chars("???.??#????#?."), vec![1, 3, 2])
+    #[test]
+    fn test_founds_in_real() {
+        let input = to_chars("???.??#????#?.");
+        let candidates = find_and_replace(0, &input, 1);
+        assert_eq!(
+            candidates,
+            vec![
+                (1, to_chars("#??.??#????#?.")),
+                (2, to_chars(".#?.??#????#?.")),
+                (3, to_chars("..#.??#????#?.")),
+                (5, to_chars("....#?#????#?.")),
+                (7, to_chars("......#????#?.")),
+            ]
+        );
+
+        let mut v = to_chars("#??.??#????#?.");
+        let next = turn_to_next(&mut v, 1);
+        assert_eq!(next, 2);
+        assert_eq!(v, to_chars("#.?.??#????#?."));
+
+        let input = to_chars("#.?.??#????#?.");
+        let pos = find_positions(&input[2..], 3);
+        assert_eq!(pos, vec![4 - 2, 5 - 2, 6 - 2]);
+
+        let input = to_chars("#.?.??#????#?.");
+        let candidates = find_and_replace(2, &input, 3);
+        assert_eq!(
+            candidates,
+            vec![
+                (7, to_chars("#...###????#?.")),
+                (8, to_chars("#....###???#?.")),
+                (9, to_chars("#.....###??#?.")),
+            ]
+        );
+
+        let input = to_chars("#...###.???#?.");
+        let candidates = find_and_replace(8, &input, 1);
+        assert_eq!(
+            candidates,
+            vec![
+                (9, to_chars("#...###.#??#?.")),
+                (10, to_chars("#...###..#?#?.")),
+                (12, to_chars("#...###....#?.")),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_find_real_2() {
+        let input = to_chars("#.?.??#????#?.");
+        let founds = find_all(input, vec![1, 3, 2])
             .into_iter()
             .map(|vc| vc.iter().collect())
             .collect::<HashSet<String>>();
@@ -277,16 +326,14 @@ mod tests {
             ]
         );
     }
+
     #[test]
     fn test_find_positions() {
         assert_eq!(
             find_positions(&vec!['?', '?', '?', '.', '#', '#', '#'], 2),
-            (vec![0, 1], None)
+            vec![0, 1]
         );
-        assert_eq!(
-            find_positions(&to_chars("?###????????"), 3),
-            (vec![], Some(1))
-        );
+        assert_eq!(find_positions(&to_chars("?###????????"), 3), vec![1]);
     }
 
     #[test]
