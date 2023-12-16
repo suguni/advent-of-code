@@ -114,17 +114,11 @@ fn find_all(marks: Vec<char>, counts: Vec<u32>) -> Vec<Vec<char>> {
     let mut result = vec![];
 
     while let Some((start, marks, counts)) = jobs.pop() {
-        // println!(">> {:?}, {:?}, {:?}", start, marks, counts);
-
         let c = counts[0];
         for (mut next_start, mut replaced_marks) in
             find_and_replace(start, &marks, c as usize).into_iter()
         {
-            // println!("-> {:?}, {:?}, {:?}", next_start, replaced_marks, c);
-
             next_start = turn_to_next(&mut replaced_marks, next_start);
-
-            // println!("<- {:?}, {:?}, {:?}", next_start, replaced_marks, c);
 
             if next_start >= replaced_marks.len() && counts.len() > 1 {
                 // drop
@@ -150,8 +144,21 @@ fn solve1(data: &str) -> usize {
     data.lines()
         .map(|line| load_line(line))
         .flat_map(|(marks, counts)| find_all(marks, counts))
-        .inspect(|s| println!("{:?}", s.iter().collect::<String>()))
         .count()
+}
+
+fn solve2(data: &str) -> usize {
+    data.lines()
+        .map(|line| load_line(line))
+        .map(|(marks, counts)| (repeat_marks(marks), counts.repeat(5)))
+        .flat_map(|(marks, counts)| find_all(marks, counts))
+        .count()
+}
+
+fn repeat_marks(marks: Vec<char>) -> Vec<char> {
+    itertools::repeat_n(marks, 5)
+        .collect::<Vec<Vec<char>>>()
+        .join(&'?')
 }
 
 #[cfg(test)]
@@ -173,8 +180,18 @@ mod tests {
     }
 
     #[test]
+    fn test_solve2() {
+        assert_eq!(solve2(EXAMPLE), 525152);
+    }
+
+    #[test]
     fn test_quiz1() {
         assert_eq!(solve1(INPUT), 7361);
+    }
+
+    #[test]
+    fn test_quiz2() {
+        assert_eq!(solve2(INPUT), 7361);
     }
 
     #[test]
