@@ -4,8 +4,8 @@ use std::cmp::min;
 const INPUT: &str = include_str!("../../data/2023/input13.txt");
 
 struct Block {
-    rows: Vec<Vec<usize>>,
-    cols: Vec<Vec<usize>>,
+    rows: Vec<usize>,
+    cols: Vec<usize>,
 }
 
 fn load_block(input: &str) -> Block {
@@ -28,7 +28,10 @@ fn load_block(input: &str) -> Block {
         }
     }
 
-    Block { rows, cols }
+    Block {
+        rows: rows.iter().map(|vs| vs2bin(vs)).collect(),
+        cols: cols.iter().map(|vs| vs2bin(vs)).collect(),
+    }
 }
 
 fn load(input: &str) -> Vec<Block> {
@@ -39,7 +42,7 @@ fn load(input: &str) -> Vec<Block> {
         .collect()
 }
 
-fn find_reflect(series: Vec<Vec<usize>>) -> Option<usize> {
+fn find_reflect(series: Vec<usize>) -> Option<usize> {
     let candidates = series
         .windows(2)
         .enumerate()
@@ -87,9 +90,7 @@ fn vs2bin(vs: &Vec<usize>) -> usize {
         .fold(0_usize, |acc, v| acc + 2_usize.pow(*v as u32))
 }
 
-fn find_reflect_with_smudge(series: Vec<Vec<usize>>) -> Option<usize> {
-    let series = series.iter().map(|vs| vs2bin(vs)).collect::<Vec<usize>>();
-
+fn find_reflect_with_smudge(series: Vec<usize>) -> Option<usize> {
     let candidates = series
         .windows(2)
         .enumerate()
@@ -264,7 +265,7 @@ mod tests {
         assert_eq!(block_h.cols, ex_h_cols());
     }
 
-    fn ex_h_cols() -> Vec<Vec<usize>> {
+    fn ex_h_cols() -> Vec<usize> {
         vec![
             vec![0, 1, 3, 4, 6],
             vec![3, 4],
@@ -276,9 +277,12 @@ mod tests {
             vec![2, 3, 4, 5],
             vec![0, 1, 2, 5, 6],
         ]
+        .iter()
+        .map(|vs| vs2bin(vs))
+        .collect()
     }
 
-    fn ex_h_rows() -> Vec<Vec<usize>> {
+    fn ex_h_rows() -> Vec<usize> {
         vec![
             vec![0, 4, 5, 8],
             vec![0, 5, 8],
@@ -288,9 +292,12 @@ mod tests {
             vec![2, 3, 6, 7, 8],
             vec![0, 5, 8],
         ]
+        .iter()
+        .map(|vs| vs2bin(vs))
+        .collect()
     }
 
-    fn ex_v_cols() -> Vec<Vec<usize>> {
+    fn ex_v_cols() -> Vec<usize> {
         vec![
             vec![0, 2, 3, 6],
             vec![2, 3],
@@ -302,9 +309,12 @@ mod tests {
             vec![0, 1, 4, 5, 6],
             vec![2, 3],
         ]
+        .iter()
+        .map(|vs| vs2bin(vs))
+        .collect()
     }
 
-    fn ex_v_rows() -> Vec<Vec<usize>> {
+    fn ex_v_rows() -> Vec<usize> {
         vec![
             vec![0, 2, 3, 6, 7],
             vec![2, 4, 5, 7],
@@ -314,6 +324,9 @@ mod tests {
             vec![2, 3, 6, 7],
             vec![0, 2, 4, 5, 7],
         ]
+        .iter()
+        .map(|vs| vs2bin(vs))
+        .collect()
     }
 
     #[test]
