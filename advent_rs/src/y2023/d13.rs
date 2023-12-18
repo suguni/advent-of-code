@@ -1,3 +1,4 @@
+use num::abs;
 use std::cmp::min;
 
 const INPUT: &str = include_str!("../../data/2023/input13.txt");
@@ -76,6 +77,78 @@ fn solve1(input: &str) -> usize {
         })
         .sum()
 }
+
+fn is_smudged(line1: usize, line2: usize) -> bool {
+    check_bit(line1 ^ line2)
+}
+
+fn vs2bin(vs: &Vec<usize>) -> usize {
+    vs.iter()
+        .fold(0_usize, |acc, v| acc + 2_usize.pow(*v as u32))
+}
+
+fn find_reflect_with_smudge(series: Vec<Vec<usize>>) -> Option<usize> {
+    let series = series.iter().map(|vs| vs2bin(vs)).collect::<Vec<usize>>();
+
+    let candidates = series
+        .windows(2)
+        .enumerate()
+        .filter_map(|(idx, vs)| {
+            if vs[0] == vs[1] {
+                Some((idx, 0))
+            } else if is_smudged(vs[0], vs[1]) {
+                Some((idx, 1))
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<(usize, usize)>>();
+
+    for (start, mut smudge_count) in candidates {
+        let len = min(start + 1, series.len() - start - 1);
+        let mut found = true;
+
+        for s in 1..len {
+            let l1 = series[start - s];
+            let l2 = series[start + 1 + s];
+            if l1 != l2 {
+                if is_smudged(l1, l2) {
+                    smudge_count += 1;
+                    if smudge_count > 1 {
+                        break;
+                    }
+                } else {
+                    smudge_count = 0;
+                    break;
+                }
+            }
+        }
+
+        if smudge_count == 1 {
+            return Some(start);
+        }
+    }
+
+    None
+}
+
+fn check_bit(bits: usize) -> bool {
+    bits != 0 && (bits & (bits - 1)) == 0
+}
+
+fn solve2(input: &str) -> usize {
+    load(input)
+        .into_iter()
+        .map(|block| {
+            let rows = block.rows;
+            let cols = block.cols;
+            find_reflect_with_smudge(rows)
+                .map(|r| (r + 1) * 100)
+                .unwrap_or_else(|| find_reflect_with_smudge(cols).unwrap() + 1)
+        })
+        .sum()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -113,6 +186,54 @@ mod tests {
 #....#..#";
 
     #[test]
+    fn test_find_reflect_with_smudge() {
+        assert_eq!(find_reflect_with_smudge(ex_v_cols()), None);
+        assert_eq!(find_reflect_with_smudge(ex_v_rows()), Some(2));
+
+        assert_eq!(find_reflect_with_smudge(ex_h_cols()), None);
+        assert_eq!(find_reflect_with_smudge(ex_h_rows()), Some(0));
+    }
+
+    #[test]
+    fn test_check_bit() {
+        assert_eq!(check_bit(0b100), true);
+        assert_eq!(check_bit(0b101), false);
+    }
+
+    #[test]
+    fn test_xor() {
+        assert_eq!(0b101100110 ^ 0b001100110, 0b100000000);
+    }
+
+    #[test]
+    fn test_eq_or_smudge() {
+        assert!(is_smudged(
+            vs2bin(&vec![1, 2, 3]),
+            vs2bin(&vec![1, 2, 3, 4])
+        ));
+
+        assert!(is_smudged(
+            vs2bin(&vec![0, 1, 2, 3]),
+            vs2bin(&vec![1, 2, 3])
+        ));
+
+        assert_eq!(
+            is_smudged(vs2bin(&vec![1, 2, 3]), vs2bin(&vec![1, 2, 3])),
+            false
+        );
+
+        assert_eq!(
+            is_smudged(vs2bin(&vec![0, 1, 3]), vs2bin(&vec![1, 2, 3])),
+            false
+        );
+
+        assert_eq!(
+            is_smudged(vs2bin(&vec![1, 3]), vs2bin(&vec![1, 2, 3, 4])),
+            false
+        );
+    }
+
+    #[test]
     fn test_solve1() {
         assert_eq!(solve1(EX), 405);
     }
@@ -120,6 +241,16 @@ mod tests {
     #[test]
     fn test_quiz1() {
         assert_eq!(solve1(INPUT), 35360);
+    }
+
+    #[test]
+    fn test_solve2() {
+        assert_eq!(solve2(EX), 400);
+    }
+
+    #[test]
+    fn test_quiz2() {
+        assert_eq!(solve2(INPUT), 36755);
     }
 
     #[test]
