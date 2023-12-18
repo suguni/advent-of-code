@@ -136,8 +136,66 @@ fn find_all(marks: Vec<char>, counts: Vec<u32>) -> Vec<Vec<char>> {
     result
 }
 
-fn find_all_count(marks: Vec<char>, counts: Vec<u32>) -> usize {
-    find_all(marks, counts).len()
+fn find_positions2(marks: &[char], count: usize, max_pos: usize) -> Vec<usize> {
+    let mut pos = vec![];
+
+    let mut already_sharp_matched = false;
+
+    let end = marks
+        .iter()
+        .position(|c| *c == '#')
+        .map(|p| min(p + count, max_pos))
+        .unwrap_or(marks.len());
+
+    for (index, region) in marks[..end].windows(count).enumerate() {
+        let sharp_matched = region
+            .iter()
+            .map(|c| if *c == '?' { '#' } else { *c })
+            .all(|c| c == '#');
+
+        let next_is_not_sharp = index + count == marks.len() || marks[index + count] != '#';
+
+        if sharp_matched && next_is_not_sharp {
+            pos.push(index);
+        }
+    }
+
+    pos
+}
+
+fn find_all2(marks: &[char], counts: &[u32]) -> usize {
+    let mut jobs = vec![(0, &counts[..])];
+    let mut match_count = 0;
+
+    while let Some((start, remains)) = jobs.pop() {
+        let c = remains[0] as usize;
+
+        let remains_counts = remains[1..].iter().sum::<u32>() as usize;
+        let remains_len = (&marks[start..]).len();
+        if remains_counts > remains_len {
+            // println!("skip");
+            continue;
+        }
+
+        let max_pos = remains_len - remains_counts;
+
+        let next_starts = find_positions2(&marks[start..], c, max_pos)
+            .into_iter()
+            .map(|p| start + p + c + 1)
+            .collect::<Vec<usize>>();
+
+        for next_start in next_starts.into_iter() {
+            if remains.len() == 1 {
+                if next_start >= marks.len() || !marks[next_start..].contains(&'#') {
+                    match_count += 1;
+                }
+            } else if next_start < marks.len() {
+                jobs.push((next_start, &remains[1..]));
+            }
+        }
+    }
+
+    match_count
 }
 
 fn solve1(data: &str) -> usize {
@@ -147,18 +205,79 @@ fn solve1(data: &str) -> usize {
         .count()
 }
 
-fn solve2(data: &str) -> usize {
+fn solve2(data: &str, repeat: usize) -> usize {
     data.lines()
         .map(|line| load_line(line))
-        .map(|(marks, counts)| (repeat_marks(marks), counts.repeat(5)))
-        .flat_map(|(marks, counts)| find_all(marks, counts))
-        .count()
+        .map(|(marks, counts)| {
+            // let marks = simplify(marks);
+            // let c1 = find_all2(&marks[..], &counts[..]);
+            //
+            // let (marks2, counts2) = repeat_marks(&marks, &counts, 2);
+            // let marks2 = simplify(marks2);
+            // let c2 = find_all2(&marks2[..], &counts2[..]);
+
+            // let (marks3, counts3) = repeat_marks(&marks, &counts, 3);
+            // let marks3 = simplify(marks3);
+            // let c3 = find_all2(&marks3[..], &counts3[..]);
+
+            // let (marks4, counts4) = repeat_marks(&marks, &counts, 4);
+            // let marks4 = simplify(marks4);
+            // let c4 = find_all2(&marks4[..], &counts4[..]);
+
+            // let mut marks3 = marks.clone();
+            // if marks3[marks3.len() - 1] == '.' {
+            //     marks3.insert(0, '?');
+            // } else if marks3[marks3.len() - 1] == '?' {
+            //     if let Some(p) = marks3.iter().rposition(|c| *c == '#') {
+            //         let count = marks3.len() - p;
+            //         if count > 1 {
+            //             for _ in 0..count - 1 {
+            //                 marks3.insert(0, '?');
+            //             }
+            //         }
+            //     }
+            // }
+
+            // (c2 / c1).pow(4) * c1
+
+            let (marks, counts) = repeat_marks(&marks, &counts, repeat);
+            let marks = simplify(marks);
+            let c = find_all2(&marks[..], &counts[..]);
+
+            println!("{c} {:?}", marks.iter().collect::<String>());
+            c
+        })
+        .sum()
 }
 
-fn repeat_marks(marks: Vec<char>) -> Vec<char> {
-    itertools::repeat_n(marks, 5)
-        .collect::<Vec<Vec<char>>>()
-        .join(&'?')
+fn repeat_marks(marks: &Vec<char>, counts: &Vec<u32>, nums: usize) -> (Vec<char>, Vec<u32>) {
+    (
+        itertools::repeat_n(marks, nums)
+            .map(|x| x.clone())
+            .collect::<Vec<Vec<char>>>()
+            .join(&'?'),
+        counts.repeat(nums),
+    )
+}
+
+fn simplify(marks: Vec<char>) -> Vec<char> {
+    let mut vs = vec![];
+
+    let mut meet_dot = false;
+
+    for c in marks {
+        if c == '?' || c == '#' {
+            meet_dot = false;
+            vs.push(c)
+        } else {
+            if !meet_dot {
+                meet_dot = true;
+                vs.push(c);
+            }
+        }
+    }
+
+    vs
 }
 
 #[cfg(test)]
@@ -176,22 +295,90 @@ mod tests {
 
     #[test]
     fn test_solve1() {
-        assert_eq!(solve1(EXAMPLE), 21);
-    }
-
-    #[test]
-    fn test_solve2() {
-        assert_eq!(solve2(EXAMPLE), 525152);
+        assert_eq!(solve2(EXAMPLE, 1), 21);
     }
 
     #[test]
     fn test_quiz1() {
-        assert_eq!(solve1(INPUT), 7361);
+        assert_eq!(solve2(INPUT, 1), 7361);
+    }
+
+    #[test]
+    fn test_solve2() {
+        assert_eq!(solve2(EXAMPLE, 5), 525152);
     }
 
     #[test]
     fn test_quiz2() {
-        assert_eq!(solve2(INPUT), 7361);
+        assert_eq!(solve2(INPUT, 5), 7361);
+    }
+
+    #[test]
+    fn test_simplify() {
+        assert_eq!(simplify(to_chars(".??..??...?##")), to_chars(".??.??.?##"));
+    }
+
+    #[test]
+    fn test_long() {
+        let (marks, counts) = repeat_marks(&to_chars("????????.????."), &vec![1, 2, 2, 1], 1);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 31);
+
+        let (marks, counts) = repeat_marks(&to_chars("????????.????."), &vec![1, 2, 2, 1], 2);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 4074);
+
+        let (marks, counts) = repeat_marks(&to_chars("????????.????."), &vec![1, 2, 2, 1], 3);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 587645);
+
+        let (marks, counts) = repeat_marks(&to_chars("????????.????."), &vec![1, 2, 2, 1], 4);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 88553576);
+        // 150.69229892
+        // 144.24275896
+        // 131.41935484
+    }
+
+    #[test]
+    fn test_find_all2() {
+        let (marks, counts) = repeat_marks(&to_chars("???.###"), &vec![1, 1, 3], 1);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 1);
+
+        let (marks, counts) = repeat_marks(&to_chars("???.###"), &vec![1, 1, 3], 2);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 1);
+
+        let (marks, counts) = repeat_marks(&to_chars(".??..??...?##"), &vec![1, 1, 3], 1);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 4);
+
+        let (marks, counts) = repeat_marks(&to_chars(".??..??...?##"), &vec![1, 1, 3], 2);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 32);
+
+        let (marks, counts) = repeat_marks(&to_chars(".??..??...?##"), &vec![1, 1, 3], 3);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 256);
+
+        let (marks, counts) = repeat_marks(&to_chars(".??..??...?##"), &vec![1, 1, 3], 4);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 2048);
+
+        let (marks, counts) = repeat_marks(&to_chars(".??..??...?##"), &vec![1, 1, 3], 5);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 16384);
+
+        let (marks, counts) = repeat_marks(&to_chars("????.#...#..."), &vec![4, 1, 1], 1);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 1);
+
+        let (marks, counts) = repeat_marks(&to_chars("?????.#...#..."), &vec![4, 1, 1], 1);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 2);
+
+        let (marks, counts) = repeat_marks(&to_chars("????.#...#..."), &vec![4, 1, 1], 2);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 2);
+
+        let (marks, counts) = repeat_marks(&to_chars("????.#...#..."), &vec![4, 1, 1], 3);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 4);
+
+        let (marks, counts) = repeat_marks(&to_chars("????.#...#..."), &vec![4, 1, 1], 4);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 8);
+
+        let (marks, counts) = repeat_marks(&to_chars("????.#...#..."), &vec![4, 1, 1], 5);
+        assert_eq!(find_all2(&marks[..], &counts[..]), 16);
+
+        // let (marks, counts) = repeat_marks(to_chars("?###????????"), vec![3, 2, 1], 2);
+        // assert_eq!(find_all2(marks, counts), 10);
     }
 
     #[test]
@@ -351,6 +538,13 @@ mod tests {
             vec![0, 1]
         );
         assert_eq!(find_positions(&to_chars("?###????????"), 3), vec![1]);
+        assert_eq!(find_positions(&to_chars("?###????????"), 4), vec![0, 1]);
+        assert_eq!(find_positions(&to_chars("?#?"), 1), vec![1]);
+        assert_eq!(find_positions(&to_chars("?#?"), 2), vec![0, 1]);
+        assert_eq!(find_positions(&to_chars("?#?#"), 2), vec![0]);
+
+        let (marks, counts) = repeat_marks(&to_chars("???.###"), &vec![1, 1, 3], 5);
+        assert_eq!(find_positions(&marks[..], 1), vec![0, 1, 2]);
     }
 
     #[test]
