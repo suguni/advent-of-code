@@ -5,7 +5,8 @@ use nom::character::complete::{char, multispace1, newline};
 use nom::multi::{many0, separated_list1};
 use nom::sequence::{delimited, separated_pair};
 use nom::IResult;
-use std::collections::HashMap;
+use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
 
 const QUIZ_INPUT: &str = include_str!("../../data/2024/input5.txt");
 
@@ -21,11 +22,15 @@ fn parse_data(input: &str) -> IResult<&str, (Vec<(i32, i32)>, Vec<Vec<i32>>)> {
     separated_pair(parse_rules, multispace1, parse_updates)(input)
 }
 
-fn rules_to_map(rules: Vec<(i32, i32)>) -> HashMap<i32, Vec<i32>> {
+fn rules_to_map(rules: &Vec<(i32, i32)>) -> HashMap<i32, Vec<i32>> {
     rules.iter().fold(HashMap::new(), |mut acc, (a, b)| {
         let vs = acc.entry(*a).or_insert(vec![]);
         vs.push(*b);
-        // vs.sort();
+
+        if !acc.contains_key(b) {
+            acc.insert(*b, Vec::new());
+        }
+
         acc
     })
 }
@@ -45,15 +50,47 @@ fn check(update: &Vec<i32>, rules: &HashMap<i32, Vec<i32>>) -> bool {
 
 fn solve1(input: &str) -> i32 {
     let (_, (rules, updates)) = parse_data(input).unwrap();
-    let rules = rules_to_map(rules);
-    updates.iter().filter(|&us| check(us, &rules)).map(|us| {
-        // dbg!(us);
-        us[us.len() / 2]
-    }).sum()
+    let rules = rules_to_map(&rules);
+    updates
+        .iter()
+        .filter(|&us| check(us, &rules))
+        .map(|us| us[us.len() / 2])
+        .sum()
 }
 
 fn quiz1() -> i32 {
     solve1(QUIZ_INPUT)
+}
+
+fn solve2(input: &str) -> i32 {
+    let (_, (rules, updates)) = parse_data(input).unwrap();
+    let rules = rules_to_map(&rules);
+    let mut result = 0;
+
+    for us in updates.iter() {
+        let mut us_mut = us.clone();
+        us_mut.sort_by(|a, b| {
+            if let Some(vs) = rules.get(a) {
+                if vs.contains(b) {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                }
+            } else {
+                Ordering::Greater
+            }
+        });
+
+        let changed = us_mut.iter().zip(us).any(|(a, b)| *a != *b);
+        if changed {
+            result += us_mut[us_mut.len() / 2];
+        }
+    }
+    result
+}
+
+fn quiz2() -> i32 {
+    solve2(QUIZ_INPUT)
 }
 
 #[cfg(test)]
@@ -107,16 +144,13 @@ mod tests {
 
     #[test]
     fn test_rules_to_map() {
-        let result = rules_to_map(vec![
+        let result = rules_to_map(&vec![
             (97, 13),
             (97, 61),
-            (97, 47),
-            (75, 29),
             (61, 13),
-            (75, 53),
         ]);
 
-        let expected = HashMap::from([(97, vec![13, 61, 47]), (75, vec![29, 53]), (61, vec![13])]);
+        let expected = HashMap::from([(97, vec![13, 61]), (61, vec![13]), (13, vec![])]);
 
         assert_eq!(expected, result);
     }
@@ -124,7 +158,7 @@ mod tests {
     #[test]
     fn test_check() {
         let (_, (rules, _)) = parse_data(SAMPLE).unwrap();
-        let rules = rules_to_map(rules);
+        let rules = rules_to_map(&rules);
         assert!(check(&vec![75, 47, 61, 53, 29], &rules));
         assert_eq!(check(&vec![61, 13, 29], &rules), false);
     }
@@ -137,5 +171,15 @@ mod tests {
     #[test]
     fn run_quiz1() {
         assert_eq!(quiz1(), 4609);
+    }
+
+    #[test]
+    fn test2() {
+        assert_eq!(solve2(SAMPLE), 123);
+    }
+
+    #[test]
+    fn run_quiz2() {
+        assert_eq!(quiz2(), 5723);
     }
 }
