@@ -163,35 +163,7 @@ fn step_more(current: &Guard, lab_map: &LabMap, visited: &Vec<Guard>) -> Result<
     }
 }
 
-fn step_size(current: &Guard, obstacles: &Vec<Pos>) -> i32 {
-    if let Some(step) = match current.dir {
-        Dir::N => obstacles.iter()
-            .filter(|(r, c)| *c == current.pos.1 && *r < current.pos.0)
-            .max_by(|(r1, _), (r2, _)| (*r1).cmp(r2))
-            .map(|(r, _)| current.pos.0 - r),
-
-        Dir::E => obstacles.iter()
-            .filter(|(r, c)| *c > current.pos.1 && *r == current.pos.0)
-            .min_by(|(_, c1), (_, c2)| (*c1).cmp(c2))
-            .map(|(_, c)| c - current.pos.1),
-
-        Dir::S => obstacles.iter()
-            .filter(|(r, c)| *c == current.pos.1 && *r > current.pos.0)
-            .min_by(|(r1, _), (r2, _)| (*r1).cmp(r2))
-            .map(|(r, _)| r - current.pos.0),
-
-        Dir::W => obstacles.iter()
-            .filter(|(r, c)| *c < current.pos.1 && *r == current.pos.0)
-            .max_by(|(_, c1), (_, c2)| (*c1).cmp(c2))
-            .map(|(_, c)| current.pos.1 - c),
-    } {
-        step
-    } else {
-        9999999
-    }
-}
-
-fn next_guard<'a>(current: &Guard, obstacles: &'a Vec<Pos>) -> Option<Guard> {
+fn next_guard(current: &Guard, obstacles: &Vec<Pos>) -> Option<Guard> {
     match current.dir {
         Dir::N => obstacles.iter()
             .filter(|(r, c)| *c == current.pos.1 && *r < current.pos.0)
@@ -219,28 +191,16 @@ fn has_loop(lab_map: &LabMap) -> bool {
     let mut current = Guard::new(lab_map.start, Dir::N);
     let mut visited = vec![];
 
-    let mut marked = vec!['.'; lab_map.size.0 as usize * lab_map.size.1 as usize];
-    lab_map.obstacles.iter().for_each(|(r, c)| marked[*r as usize * lab_map.size.0 as usize + *c as usize] = '#');
-
     loop {
         match step_more(&current, &lab_map, &visited) {
             Ok(next) => {
                 visited.push(next);
-
-                let (r, c) = next.pos;
-                marked[r as usize * lab_map.size.0 as usize + c as usize] = 'X';
-
                 current = next;
             }
             Err(Stop::OUTSIDE) => {
-                // let map = marked.chunks(lab_map.size.0 as usize).map(|cs| cs.iter().join("")).join("\n");
-                // println!("{}", map);
                 return false;
             }
             Err(Stop::VISITED) => {
-                let map = marked.chunks(lab_map.size.0 as usize).map(|cs| cs.iter().join("")).join("\n");
-                // println!(" ------------------------------- VISITED -------------------------------");
-                // println!("{}", map);
                 return true;
             }
         }
