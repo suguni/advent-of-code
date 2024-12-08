@@ -1,13 +1,24 @@
+use std::collections::HashSet;
 use itertools::Itertools;
 use nom::Parser;
 
 const QUIZ_INPUT: &str = include_str!("../../data/2024/input6.txt");
 
-
 type Pos = (i32, i32);
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 enum Dir { N, E, S, W }
+
+impl Dir {
+    fn turn(&self) -> Dir {
+        match self {
+            Dir::N => Dir::E,
+            Dir::E => Dir::S,
+            Dir::S => Dir::W,
+            Dir::W => Dir::N,
+        }
+    }
+}
 
 #[derive(Debug)]
 struct LabMap {
@@ -26,9 +37,19 @@ impl LabMap {
     fn is_obstacle(&self, pos: Pos) -> bool {
         self.obstacles.contains(&pos)
     }
+
+    fn add_obstacle(&self, pos: Pos) -> LabMap {
+        let mut obstacles = self.obstacles.clone();
+        obstacles.push(pos);
+        LabMap {
+            start: self.start,
+            obstacles,
+            size: self.size,
+        }
+    }
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 struct Guard {
     pos: Pos,
     dir: Dir,
@@ -87,7 +108,38 @@ fn parse_data(input: &str) -> LabMap {
     }
 }
 
-fn run(current: &Guard, lab_map: &LabMap) -> Option<Guard> {
+fn solve1(input: &str) -> usize {
+    let lab_map = parse_data(input);
+    let mut current = Guard::new(lab_map.start, Dir::N);
+
+    let mut marked = vec!['.'; lab_map.size.0 as usize * lab_map.size.1 as usize];
+    lab_map.obstacles.iter().for_each(|(r, c)| marked[*r as usize * lab_map.size.0 as usize + *c as usize] = '#');
+
+    while let Some(next) = step_one(&current, &lab_map) {
+        let (r, c) = next.pos;
+        marked[r as usize * lab_map.size.0 as usize + c as usize] = 'X';
+        current = next;
+    }
+
+    let (r, c) = lab_map.start;
+    marked[r as usize * lab_map.size.0 as usize + c as usize] = '^';
+
+    let map = marked.chunks(lab_map.size.0 as usize).map(|cs| cs.iter().join("")).join("\n");
+
+    println!("{}", map);
+
+    marked.iter().filter(|x| **x == 'X' || **x == '^').count()
+}
+
+fn quiz1() -> usize {
+    solve1(QUIZ_INPUT)
+}
+
+enum Stop {
+    OUTSIDE, VISITED,
+}
+
+fn step_one(current: &Guard, lab_map: &LabMap) -> Option<Guard> {
     let next = current.step(1);
 
     if lab_map.is_outside(next.pos) {
@@ -99,34 +151,128 @@ fn run(current: &Guard, lab_map: &LabMap) -> Option<Guard> {
     }
 }
 
-fn solve1(input: &str) -> usize {
-    let lab_map = parse_data(input);
+fn step_more(current: &Guard, lab_map: &LabMap, visited: &Vec<Guard>) -> Result<Guard, Stop> {
+    if let Some(next) = next_guard(current, &lab_map.obstacles) {
+        if visited.contains(&next) {
+            Err(Stop::VISITED)
+        } else {
+            Ok(next)
+        }
+    } else {
+        Err(Stop::OUTSIDE)
+    }
+}
+
+fn step_size(current: &Guard, obstacles: &Vec<Pos>) -> i32 {
+    if let Some(step) = match current.dir {
+        Dir::N => obstacles.iter()
+            .filter(|(r, c)| *c == current.pos.1 && *r < current.pos.0)
+            .max_by(|(r1, _), (r2, _)| (*r1).cmp(r2))
+            .map(|(r, _)| current.pos.0 - r),
+
+        Dir::E => obstacles.iter()
+            .filter(|(r, c)| *c > current.pos.1 && *r == current.pos.0)
+            .min_by(|(_, c1), (_, c2)| (*c1).cmp(c2))
+            .map(|(_, c)| c - current.pos.1),
+
+        Dir::S => obstacles.iter()
+            .filter(|(r, c)| *c == current.pos.1 && *r > current.pos.0)
+            .min_by(|(r1, _), (r2, _)| (*r1).cmp(r2))
+            .map(|(r, _)| r - current.pos.0),
+
+        Dir::W => obstacles.iter()
+            .filter(|(r, c)| *c < current.pos.1 && *r == current.pos.0)
+            .max_by(|(_, c1), (_, c2)| (*c1).cmp(c2))
+            .map(|(_, c)| current.pos.1 - c),
+    } {
+        step
+    } else {
+        9999999
+    }
+}
+
+fn next_guard<'a>(current: &Guard, obstacles: &'a Vec<Pos>) -> Option<Guard> {
+    match current.dir {
+        Dir::N => obstacles.iter()
+            .filter(|(r, c)| *c == current.pos.1 && *r < current.pos.0)
+            .max_by(|(r1, _), (r2, _)| (*r1).cmp(r2))
+            .map(|(r, c)| Guard::new((*r + 1, *c), current.dir.turn())),
+
+        Dir::E => obstacles.iter()
+            .filter(|(r, c)| *c > current.pos.1 && *r == current.pos.0)
+            .min_by(|(_, c1), (_, c2)| (*c1).cmp(c2))
+            .map(|(r, c)| Guard::new((*r, *c - 1), current.dir.turn())),
+
+        Dir::S => obstacles.iter()
+            .filter(|(r, c)| *c == current.pos.1 && *r > current.pos.0)
+            .min_by(|(r1, _), (r2, _)| (*r1).cmp(r2))
+            .map(|(r, c)| Guard::new((*r - 1, *c), current.dir.turn())),
+
+        Dir::W => obstacles.iter()
+            .filter(|(r, c)| *c < current.pos.1 && *r == current.pos.0)
+            .max_by(|(_, c1), (_, c2)| (*c1).cmp(c2))
+            .map(|(r, c)| Guard::new((*r, *c + 1), current.dir.turn())),
+    }
+}
+
+fn has_loop(lab_map: &LabMap) -> bool {
     let mut current = Guard::new(lab_map.start, Dir::N);
+    let mut visited = vec![];
 
     let mut marked = vec!['.'; lab_map.size.0 as usize * lab_map.size.1 as usize];
     lab_map.obstacles.iter().for_each(|(r, c)| marked[*r as usize * lab_map.size.0 as usize + *c as usize] = '#');
 
-    let (r, c) = lab_map.start;
-    marked[r as usize * lab_map.size.0 as usize + c as usize] = 'O';
+    loop {
+        match step_more(&current, &lab_map, &visited) {
+            Ok(next) => {
+                visited.push(next);
 
+                let (r, c) = next.pos;
+                marked[r as usize * lab_map.size.0 as usize + c as usize] = 'X';
 
-    while let Some(g) = run(&current, &lab_map) {
-        let (r, c) = g.pos;
-        marked[r as usize * lab_map.size.0 as usize + c as usize] = 'X';
-        current = g;
+                current = next;
+            }
+            Err(Stop::OUTSIDE) => {
+                // let map = marked.chunks(lab_map.size.0 as usize).map(|cs| cs.iter().join("")).join("\n");
+                // println!("{}", map);
+                return false;
+            }
+            Err(Stop::VISITED) => {
+                let map = marked.chunks(lab_map.size.0 as usize).map(|cs| cs.iter().join("")).join("\n");
+                // println!(" ------------------------------- VISITED -------------------------------");
+                // println!("{}", map);
+                return true;
+            }
+        }
+    }
+}
+
+fn solve2(input: &str) -> usize {
+    let lab_map = parse_data(input);
+    let mut current = Guard::new(lab_map.start, Dir::N);
+
+    let mut origin_path = HashSet::new();
+
+    while let Some(next) = step_one(&current, &lab_map) {
+        origin_path.insert(next.pos);
+        current = next;
     }
 
-    let map = marked.chunks(lab_map.size.0 as usize).map(|cs| cs.iter().join("")).join("\n");
+    let mut count = 0;
 
-    println!("{}", map);
+    for pos in origin_path {
+        let new_lab_map = lab_map.add_obstacle(pos);
+        if has_loop(&new_lab_map) {
+            count += 1;
+        }
+    }
 
-    marked.iter().filter(|x| **x == 'X' || **x == 'O').count()
+    count
 }
 
-fn quiz1() -> usize {
-    solve1(QUIZ_INPUT)
+fn quiz2() -> usize {
+    solve2(QUIZ_INPUT)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -171,5 +317,38 @@ mod tests {
     #[test]
     fn test_quiz1() {
         assert_eq!(quiz1(), 4647);
+    }
+
+    #[test]
+    fn test_solve2() {
+        assert_eq!(solve2(SAMPLE), 6);
+    }
+
+    #[test]
+    fn test_step_size() {
+        assert_eq!(
+            next_guard(&Guard::new((0, 0), Dir::E), &vec![(0, 2), (0, 3)]),
+            Some(Guard::new((0, 1), Dir::S)));
+
+        assert_eq!(
+            next_guard(&Guard::new((0, 4), Dir::W), &vec![(0, 2), (0, 5)]),
+            Some(Guard::new((0, 3), Dir::N)));
+
+        assert_eq!(
+            next_guard(&Guard::new((0, 0), Dir::S), &vec![(2, 0), (3, 0)]),
+            Some(Guard::new((1, 0), Dir::W)));
+
+        assert_eq!(
+            next_guard(&Guard::new((5, 0), Dir::N), &vec![(2, 0), (3, 0)]),
+            Some(Guard::new((4, 0), Dir::E)));
+
+        assert_eq!(
+            next_guard(&Guard::new((5, 0), Dir::N), &vec![(0, 2), (0, 3)]),
+            None);
+    }
+
+    #[test]
+    fn test_quiz2() {
+        assert_eq!(quiz2(), 1723);
     }
 }
