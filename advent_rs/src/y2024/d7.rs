@@ -31,57 +31,79 @@ fn parse_data(input: &str) -> IResult<&str, Vec<(u64, Vec<u64>)>> {
     )(input)
 }
 
-fn check(result: u64, nums: &Vec<u64>) -> bool {
-    for ops in perms(nums.len() - 1) {
-        let mut computed = nums[0];
-        for (idx, c) in ops.chars().enumerate().collect::<Vec<_>>() {
-            computed = operate(computed, c, nums[idx+1]);
+fn num_digit(mut num: u64) -> u32 {
+    let mut i = 1;
+    while num >= 10 {
+        num /= 10;
+        i += 1;
+    }
+    i
+}
+
+fn reduced(result: u64, num: u64, op: char) -> Option<u64> {
+    match op {
+        '*' => {
+            if result >= num && result % num == 0 {
+                Some(result / num)
+            } else {
+                None
+            }
         }
-        println!("{result} == {computed}, nums = {nums:?}, {ops}");
-        if result == computed {
-            return true;
+        '|' => {
+            let divider = 10_u64.pow(num_digit(num));
+            if result >= num && result % divider == num {
+                Some(result / divider)
+            } else {
+                None
+            }
+        }
+        '+' => {
+            if result >= num {
+                Some(result - num)
+            } else {
+                None
+            }
+        }
+        _ => unreachable!(),
+    }
+}
+
+fn check(result: u64, nums: &[u64], ops: &[char]) -> bool {
+
+    if nums.len() == 1 {
+        return result == nums[0];
+    }
+
+    if result == 0 && nums.len() > 0 {
+        return false;
+    }
+
+    let num = nums[nums.len() - 1];
+    for op in ops {
+        if let Some(r) = reduced(result, num, *op) {
+            if check(r, &nums[0..(nums.len() - 1)], ops) {
+                return true;
+            }
         }
     }
+
     false
 }
 
-fn operate(lh: u64, op: char, rh: u64) -> u64 {
-    if op == '*' {
-        lh * rh
-    } else {
-        lh + rh
-    }
-}
-
-fn perms(size: usize) -> HashSet<String> {
-    if size < 1 {
-        set![]
-    } else if size == 1 {
-        set!["*".to_string(), "+".to_string()]
-    } else {
-        perms(size - 1)
-            .iter()
-            .flat_map(|perm| {
-                let mut v1 = (*perm).clone();
-                let mut v2 = (*perm).clone();
-                v1.insert(0, '*');
-                v2.insert(0, '+');
-                vec![v1, v2]
-            })
-            .collect()
-    }
-}
-
-fn solve1(input: &str) -> u64 {
+fn solve(input: &str, ops: &[char]) -> u64 {
     let (_, data) = parse_data(input).unwrap();
     data.iter()
-        .filter(|(res, vs)| check(*res, vs))
+        .filter(|(res, vs)| check(*res, vs, ops))
         .map(|(res, _)| res)
         .sum()
 }
 
+fn solve1(input: &str) -> u64 {
+    solve(input, &['+', '*'])
+}
+
 fn solve2(input: &str) -> u64 {
-    todo!()
+    solve(input, &['+', '*', '|'])
 }
 
 #[cfg(test)]
@@ -108,49 +130,40 @@ mod tests {
         .unwrap();
         assert_eq!(data, vec![(190, vec![10, 19]), (3267, vec![81, 40, 27])])
     }
+
+    #[test]
+    fn reduced_test() {
+        assert_eq!(reduced(156, 6, '|'), Some(15));
+        assert_eq!(reduced(7290, 15, '*'), Some(486));
+        assert_eq!(reduced(3267, 27, '|'), None);
+        assert_eq!(reduced(83, 5, '*'), None);
+        assert_eq!(reduced(12345, 345, '|'), Some(12));
+        assert_eq!(reduced(12345, 12345, '|'), Some(0));
+    }
+
+    #[test]
+    fn check2_test() {
+        assert_eq!(check(156, &vec![15, 6], &vec!['+', '*', '|']), true);
+        assert_eq!(check(3222143, &vec![98, 427, 77, 4, 1], &vec!['+', '*']), false);
+    }
+
     #[test]
     fn test1() {
         assert_eq!(solve1(SAMPLE), 3749);
     }
 
     #[test]
-    fn test_perm() {
-        assert_eq!(
-            perms(2),
-            set![
-                "**".to_string(),
-                "*+".to_string(),
-                "+*".to_string(),
-                "++".to_string()
-            ]
-        );
-        assert_eq!(
-            perms(3),
-            set![
-                "***".to_string(),
-                "**+".to_string(),
-                "*+*".to_string(),
-                "+**".to_string(),
-                "*++".to_string(),
-                "+*+".to_string(),
-                "++*".to_string(),
-                "+++".to_string()
-            ]
-        );
+    fn run_quiz1() {
+        assert_eq!(quiz1(), 20665830408335);
     }
 
     #[test]
-    fn run_quiz1() {
-        assert_eq!(quiz1(), 1882714);
+    fn test2() {
+        assert_eq!(solve2(SAMPLE), 11387);
     }
 
-    // #[test]
-    // fn test2() {
-    //     assert_eq!(solve2(SAMPLE), 31);
-    // }
-    //
-    // #[test]
-    // fn run_quiz2() {
-    //     assert_eq!(quiz2(), 19437052);
-    // }
+    #[test]
+    fn run_quiz2() {
+        assert_eq!(quiz2(), 354060705047464);
+    }
 }
