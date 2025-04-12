@@ -9,6 +9,7 @@ use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
 use nom::{FindSubstring, IResult, Slice};
 use num::abs;
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::iter::{Enumerate, FilterMap, Iterator};
 use std::ops::{Index, Sub};
@@ -17,6 +18,8 @@ use std::str::Chars;
 const QUIZ_INPUT: &str = include_str!("../../data/2024/input8.txt");
 
 type Point = (u32, u32);
+type Size = (u32, u32);
+type Vector = (Point, Point);
 type Pair = (Point, Point);
 
 fn quiz1() -> usize {
@@ -27,8 +30,8 @@ fn quiz2() -> usize {
     solve2(QUIZ_INPUT)
 }
 
-fn parse_data(input: &str) -> ((u32, u32), Vec<Vec<(u32, u32)>>) {
-    let mut map: HashMap<char, Vec<(u32, u32)>> = HashMap::new();
+fn parse_data(input: &str) -> (Size, Vec<Vec<Point>>) {
+    let mut map: HashMap<char, Vec<Point>> = HashMap::new();
 
     let rows = input.lines().count();
     let cols = input.lines().next().unwrap().len();
@@ -47,7 +50,7 @@ fn parse_data(input: &str) -> ((u32, u32), Vec<Vec<(u32, u32)>>) {
     ((rows as u32, cols as u32), pos)
 }
 
-fn pairing(locs: &[(u32, u32)]) -> Vec<((u32, u32), (u32, u32))> {
+fn pairing(locs: &[Point]) -> Vec<Pair> {
     if locs.len() < 2 {
         panic!();
     }
@@ -56,7 +59,7 @@ fn pairing(locs: &[(u32, u32)]) -> Vec<((u32, u32), (u32, u32))> {
         return vec![(locs[0].clone(), locs[1].clone())];
     }
 
-    let mut paired: Vec<((u32, u32), (u32, u32))> = locs[1..]
+    let mut paired: Vec<Pair> = locs[1..]
         .iter()
         .map(|&pos| (locs[0].clone(), pos.clone()))
         .collect();
@@ -65,45 +68,46 @@ fn pairing(locs: &[(u32, u32)]) -> Vec<((u32, u32), (u32, u32))> {
     paired
 }
 
-fn anti_nodes((p1, p2): &Pair, (rows, cols): &(u32, u32)) -> Vec<Point> {
-    let (r1, _) = p1;
-    let (r2, _) = p2;
+fn multiplier_points((from, to): &Vector, (rows, cols): &Size) -> Vec<Point> {
+    let (x1, y1) = *from;
+    let (x2, y2) = *to;
 
-    let pt1: &Point;
-    let pt2: &Point;
+    let dx = (x2 as i32) - (x1 as i32);
+    let dy = (y2 as i32) - (y1 as i32);
 
-    if r1 < r2 {
-        pt1 = p1;
-        pt2 = p2;
-    } else {
-        pt1 = p2;
-        pt2 = p1;
+    let mut pts = vec![];
+    let mut pt = (x2 as i32 + dx, y2 as i32 + dy);
+
+    while pt.0 < (*rows as i32) && pt.1 < (*cols as i32) && pt.0 >= 0 && pt.1 >= 0 {
+        pts.push((pt.0 as u32, pt.1 as u32));
+        pt = (pt.0 + dx, pt.1 + dy);
     }
 
-    let &(r1, c1) = pt1;
-    let &(r2, c2) = pt2;
+    pts
+}
 
-    let dr = r1.abs_diff(r2);
-    let dc = c1.abs_diff(c2);
+fn anti_nodes(&(p1, p2): &Pair, size: &Size) -> Vec<Point> {
+    let d1 = multiplier_points(&(p1, p2), size);
+    let d2 = multiplier_points(&(p2, p1), size);
+    let mut result = vec![];
 
-    let mut result: Vec<Point> = vec![];
-
-    if c1 < c2 {
-        if r1 >= dr && c1 >= dc {
-            result.push((r1 - dr, c1 - dc))
-        }
-        if rows - r2 > dr && cols - c2 > dc {
-            result.push((r2 + dr, c2 + dc))
-        }
-    } else {
-        if r1 >= dr && cols - c1 > dc {
-            result.push((r1 - dr, c1 + dc))
-        }
-        if rows - r2 > dr && c2 >= dc {
-            result.push((r2 + dr, c2 - dc))
-        }
+    if d1.len() > 0 {
+        result.push(d1[0]);
     }
 
+    if d2.len() > 0 {
+        result.push(d2[0]);
+    }
+
+    result
+}
+
+fn multiple_anti_nodes(&(p1, p2): &Pair, size: &Size) -> Vec<Point> {
+    let mut d1 = multiplier_points(&(p1, p2), size);
+    let mut d2 = multiplier_points(&(p2, p1), size);
+    let mut result = vec![];
+    result.append(&mut d1);
+    result.append(&mut d2);
     result
 }
 
@@ -124,7 +128,25 @@ fn solve1(input: &str) -> usize {
 }
 
 fn solve2(input: &str) -> usize {
-    todo!()
+    let (size, locations) = parse_data(input);
+
+    let anti_nodes: HashSet<Point> = locations
+        .iter()
+        .flat_map(|loc| {
+            pairing(loc)
+                .iter()
+                .flat_map(|pair| multiple_anti_nodes(pair, &size))
+                .collect::<Vec<_>>()
+        })
+        .collect();
+
+    let antennas = locations
+        .iter()
+        .flatten()
+        .map(|p| *p)
+        .collect::<HashSet<_>>();
+
+    anti_nodes.union(&antennas).count()
 }
 
 #[cfg(test)]
@@ -223,7 +245,10 @@ mod tests {
         assert_eq!(eq_vec(&a_nodes, &vec![(9, 11)], PartialEq::eq), true);
 
         let a_nodes = anti_nodes(&((1, 8), (2, 5)), &(12, 12));
-        assert_eq!(eq_vec(&a_nodes, &vec![(0, 11), (3, 2)], PartialEq::eq), true);
+        assert_eq!(
+            eq_vec(&a_nodes, &vec![(0, 11), (3, 2)], PartialEq::eq),
+            true
+        );
 
         let a_nodes = anti_nodes(&((1, 8), (3, 7)), &(12, 12));
         assert_eq!(eq_vec(&a_nodes, &vec![(5, 6)], PartialEq::eq), true);
@@ -237,7 +262,7 @@ mod tests {
             && v2.iter().all(|p2| v1.iter().any(|p1| eq(p1, p2)))
     }
 
-    fn eq_pair(pair1: &Pair, pair2: &Pair) -> bool {
+    fn eq_pair(pair1: &Vector, pair2: &Vector) -> bool {
         let (p3, p4) = pair2;
         *pair1 == *pair2 || *pair1 == (*p4, *p3)
     }
@@ -250,5 +275,31 @@ mod tests {
     #[test]
     fn run_quiz1() {
         assert_eq!(quiz1(), 214);
+    }
+
+    #[test]
+    fn test_multiplier_points() {
+        assert_eq!(
+            multiplier_points(&((0, 0), (2, 2)), &(10, 10)),
+            vec![(4, 4), (6, 6), (8, 8)]
+        );
+        assert_eq!(
+            multiplier_points(&((9, 9), (7, 7)), &(10, 10)),
+            vec![(5, 5), (3, 3), (1, 1)]
+        );
+        assert_eq!(
+            multiplier_points(&((0, 0), (3, 1)), &(10, 10)),
+            vec![(6, 2), (9, 3)]
+        );
+    }
+
+    #[test]
+    fn test2() {
+        assert_eq!(solve2(SAMPLE), 34);
+    }
+
+    #[test]
+    fn run_quiz2() {
+        assert_eq!(quiz2(), 809);
     }
 }
