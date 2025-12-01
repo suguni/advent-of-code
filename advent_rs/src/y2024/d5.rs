@@ -4,22 +4,22 @@ use nom::character::complete::i32 as ci32;
 use nom::character::complete::{char, multispace1, newline};
 use nom::multi::{many0, separated_list1};
 use nom::sequence::{delimited, separated_pair};
-use nom::IResult;
+use nom::{IResult, Parser};
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
 const QUIZ_INPUT: &str = include_str!("../../data/2024/input5.txt");
 
 fn parse_rules(input: &str) -> IResult<&str, Vec<(i32, i32)>> {
-    separated_list1(newline, separated_pair(ci32, char('|'), ci32))(input)
+    separated_list1(newline, separated_pair(ci32, char('|'), ci32)).parse(input)
 }
 
 fn parse_updates(input: &str) -> IResult<&str, Vec<Vec<i32>>> {
-    separated_list1(newline, separated_list1(tag(","), ci32))(input)
+    separated_list1(newline, separated_list1(tag(","), ci32)).parse(input)
 }
 
 fn parse_data(input: &str) -> IResult<&str, (Vec<(i32, i32)>, Vec<Vec<i32>>)> {
-    separated_pair(parse_rules, multispace1, parse_updates)(input)
+    separated_pair(parse_rules, multispace1, parse_updates).parse(input)
 }
 
 fn rules_to_map(rules: &Vec<(i32, i32)>) -> HashMap<i32, Vec<i32>> {

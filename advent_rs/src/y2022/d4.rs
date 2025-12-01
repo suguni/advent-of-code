@@ -1,6 +1,7 @@
 use std::{convert::TryInto, ops::RangeInclusive};
 
 use nom::{
+    IResult, Parser,
     bytes::complete::tag, character::complete::newline, multi::separated_list1,
     sequence::separated_pair, *,
 };
@@ -13,16 +14,16 @@ fn parse_range(input: &str) -> IResult<&str, RangeInclusive<u32>> {
         nom::character::complete::u32,
         tag("-"),
         nom::character::complete::u32,
-    )(input)?;
-    IResult::Ok((input, s..=e))
+    ).parse(input)?;
+    Ok((input, s..=e))
 }
 
 fn parse_line(input: &str) -> IResult<&str, (RangeInclusive<u32>, RangeInclusive<u32>)> {
-    separated_pair(parse_range, tag(","), parse_range)(input)
+    separated_pair(parse_range, tag(","), parse_range).parse(input)
 }
 
 fn parse_lines(input: &str) -> IResult<&str, Vec<(RangeInclusive<u32>, RangeInclusive<u32>)>> {
-    separated_list1(newline, parse_line)(input)
+    separated_list1(newline, parse_line).parse(input)
 }
 
 fn load(input: &str) -> Vec<(RangeInclusive<u32>, RangeInclusive<u32>)> {

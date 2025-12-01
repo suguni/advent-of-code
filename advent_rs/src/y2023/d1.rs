@@ -1,10 +1,8 @@
 #![allow(dead_code)]
 
-use crate::read_file;
-use nom::{FindSubstring, Slice};
-use std::iter::{Enumerate, FilterMap, Iterator};
+use nom::{FindSubstring, Parser};
+use std::iter::Iterator;
 use std::ops::Index;
-use std::str::Chars;
 
 const QUIZ_INPUT: &str = include_str!("../../data/2023/input1.txt");
 
@@ -64,7 +62,6 @@ fn start_with_digits(chars: String) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]

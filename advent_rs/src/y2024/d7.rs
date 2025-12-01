@@ -7,7 +7,7 @@ use nom::character::complete::u64 as cu64;
 use nom::character::complete::{newline, space1};
 use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
-use nom::{FindSubstring, IResult, Slice};
+use nom::{FindSubstring, IResult, Parser};
 use num::abs;
 use std::collections::{HashMap, HashSet};
 use std::iter::{Enumerate, FilterMap, Iterator};
@@ -28,7 +28,7 @@ fn parse_data(input: &str) -> IResult<&str, Vec<(u64, Vec<u64>)>> {
     separated_list1(
         newline,
         separated_pair(cu64, tag(": "), separated_list1(space1, cu64)),
-    )(input)
+    ).parse(input)
 }
 
 fn num_digit(mut num: u64) -> u32 {

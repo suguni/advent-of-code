@@ -1,4 +1,3 @@
-use std::arch::x86_64::_mm_extract_si64;
 use std::collections::HashMap;
 
 const INPUT: &str = include_str!("../../data/2023/input14.txt");

@@ -1,19 +1,10 @@
 #![allow(dead_code)]
 
-use crate::{read_file, set};
 use itertools::Itertools;
-use nom::bytes::complete::tag;
-use nom::character::complete::u64 as cu64;
-use nom::character::complete::{newline, space1};
-use nom::multi::separated_list1;
-use nom::sequence::separated_pair;
-use nom::{FindSubstring, IResult, Slice};
-use num::abs;
-use std::cmp::Ordering;
+use nom::{FindSubstring, Parser};
 use std::collections::{HashMap, HashSet};
-use std::iter::{Enumerate, FilterMap, Iterator};
+use std::iter::Iterator;
 use std::ops::{Index, Sub};
-use std::str::Chars;
 
 const QUIZ_INPUT: &str = include_str!("../../data/2024/input8.txt");
 

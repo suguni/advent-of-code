@@ -4,7 +4,7 @@ use nom::character::complete::{digit1, newline, space0, space1};
 use nom::combinator::map_res;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{delimited, preceded, separated_pair, terminated};
-use nom::IResult;
+use nom::{IResult, Parser};
 use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::str::FromStr;
@@ -73,15 +73,15 @@ impl Card {
 }
 
 fn card_list_parser(line: &str) -> IResult<&str, Vec<Card>> {
-    separated_list1(newline, card_parser)(line)
+    separated_list1(newline, card_parser).parse(line)
 }
 
 fn card_parser(line: &str) -> IResult<&str, Card> {
-    let (line, _) = preceded(tag("Card"), space1)(line)?;
-    let (line, id) = terminated(nom::character::complete::u32, tag(":"))(line)?;
+    let (line, _) = preceded(tag("Card"), space1).parse(line)?;
+    let (line, id) = terminated(nom::character::complete::u32, tag(":")).parse(line)?;
     let (line, _) = space1(line)?;
     let (line, winning) = list_num_parser(line)?;
-    let (line, _) = delimited(space1, tag("|"), space1)(line)?;
+    let (line, _) = delimited(space1, tag("|"), space1).parse(line)?;
     let (line, having) = list_num_parser(line)?;
 
     Ok((
@@ -100,7 +100,7 @@ fn list_num_parser(line: &str) -> IResult<&str, Vec<u32>> {
         |vs: Vec<&str>| -> Result<Vec<u32>, _> {
             vs.iter().map(|&v| u32::from_str(v)).into_iter().collect()
         },
-    )(line)
+    ).parse(line)
 }
 
 #[cfg(test)]

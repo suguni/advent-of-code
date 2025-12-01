@@ -1,6 +1,6 @@
 use nom::character::complete::{newline, space1};
 use nom::multi::separated_list1;
-use nom::IResult;
+use nom::{IResult, Parser};
 
 const INPUT: &str = include_str!("../../data/2023/input9.txt");
 
@@ -63,7 +63,7 @@ fn load(data: &str) -> IResult<&str, Vec<Vec<i32>>> {
     separated_list1(
         newline,
         separated_list1(space1, nom::character::complete::i32),
-    )(data)
+    ).parse(data)
 }
 
 fn solve1(data: &str) -> i32 {

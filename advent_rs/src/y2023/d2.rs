@@ -1,20 +1,19 @@
 #![allow(dead_code)]
 
-use crate::read_file;
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_till};
-use nom::character::complete::{digit0, digit1, multispace0, newline, space0, space1};
-use nom::combinator::{map, map_res, recognize};
+use nom::bytes::complete::tag;
+use nom::character::complete::{digit1, newline, space0, space1};
+use nom::combinator::map_res;
 use nom::error::ErrorKind;
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::{preceded, separated_pair};
-use nom::{FindSubstring, IResult, Slice};
+use nom::{FindSubstring, IResult, Parser};
 use std::cmp::max;
 use std::error::Error;
-use std::iter::{Enumerate, FilterMap, Iterator};
+use std::iter::Iterator;
 use std::num::ParseIntError;
 use std::ops::Index;
-use std::str::{Chars, FromStr};
+use std::str::FromStr;
 
 const QUIZ_INPUT: &str = include_str!("../../data/2023/input2.txt");
 
@@ -73,7 +72,7 @@ fn game_id_parser(line: &str) -> IResult<&str, u32> {
     map_res(
         separated_pair(tag("Game"), space1, digit1),
         |(_, id): (_, &str)| id.parse::<u32>(),
-    )(line)
+    ).parse(line)
 }
 
 fn color_parser(line: &str) -> IResult<&str, (u32, u32, u32)> {
@@ -88,7 +87,7 @@ fn color_parser(line: &str) -> IResult<&str, (u32, u32, u32)> {
                 _ => (0, 0, 0),
             })
         },
-    )(line)
+    ).parse(line)
 }
 
 fn cube_parser(line: &str) -> IResult<&str, (u32, u32, u32)> {
@@ -99,27 +98,26 @@ fn cube_parser(line: &str) -> IResult<&str, (u32, u32, u32)> {
                 .iter()
                 .fold((0, 0, 0), |acc, v| (acc.0 + v.0, acc.1 + v.1, acc.2 + v.2)))
         },
-    )(line)
+    ).parse(line)
 }
 
 fn cube_list_parser(line: &str) -> IResult<&str, Vec<(u32, u32, u32)>> {
-    separated_list0(preceded(tag(";"), space0), cube_parser)(line)
+    separated_list0(preceded(tag(";"), space0), cube_parser).parse(line)
 }
 
 fn game_parser(line: &str) -> IResult<&str, Game> {
     map_res(
         separated_pair(game_id_parser, preceded(tag(":"), space0), cube_list_parser),
         |(id, cubes)| -> Result<Game, ErrorKind> { Ok(Game { id, cubes }) },
-    )(line)
+    ).parse(line)
 }
 
 fn game_list_parser(line: &str) -> IResult<&str, Vec<Game>> {
-    separated_list1(newline, game_parser)(line)
+    separated_list1(newline, game_parser).parse(line)
 }
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     const DATA: &str = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green

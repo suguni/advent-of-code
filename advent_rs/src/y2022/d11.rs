@@ -33,7 +33,7 @@ enum Rh {
 }
 
 fn monkey(input: &str) -> IResult<&str, u32> {
-    let (input, idx) = preceded(tag("Monkey "), complete::u32)(input)?;
+    let (input, idx) = preceded(tag("Monkey "), complete::u32).parse(input)?;
     let (input, _) = tag(":")(input)?;
     Ok((input, idx))
 }
@@ -41,7 +41,7 @@ fn monkey(input: &str) -> IResult<&str, u32> {
 fn items(input: &str) -> IResult<&str, Vec<u32>> {
     let (input, _) = space1(input)?;
     let (input, _) = tag("Starting items: ")(input)?;
-    let (input, items) = separated_list0(tag(", "), complete::u32)(input)?;
+    let (input, items) = separated_list0(tag(", "), complete::u32).parse(input)?;
     Ok((input, items))
 }
 
@@ -55,13 +55,13 @@ fn operation(input: &str) -> IResult<&str, (Op, Rh)> {
             complete::u32.map(|n| Rh::Num(n)),
             tag("old").map(|_| Rh::Old),
         )),
-    )(input)?;
+    ).parse(input)?;
     Ok((input, (op, n)))
 }
 
 fn divisible(input: &str) -> IResult<&str, u32> {
     let (input, _) = space1(input)?;
-    let (input, n) = preceded(tag("Test: divisible by "), complete::u32)(input)?;
+    let (input, n) = preceded(tag("Test: divisible by "), complete::u32).parse(input)?;
     Ok((input, n))
 }
 
@@ -73,7 +73,7 @@ fn throw(input: &str) -> IResult<&str, u32> {
             tag("If false: throw to monkey "),
         )),
         complete::u32,
-    )(input)?;
+    ).parse(input)?;
     Ok((input, n))
 }
 
@@ -128,7 +128,7 @@ fn block(input: &str) -> IResult<&str, Monkey> {
 }
 
 fn load(input: &str) -> Vec<Monkey> {
-    let (_, monkeys) = separated_list1(count(newline, 2), block)(input).unwrap();
+    let (_, monkeys) = separated_list1(count(newline, 2), block).parse(input).unwrap();
     monkeys
 }
 

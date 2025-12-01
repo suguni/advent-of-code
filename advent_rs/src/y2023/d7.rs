@@ -2,7 +2,7 @@ use nom::character::complete::{alphanumeric1, anychar, newline, space1};
 use nom::combinator::map;
 use nom::multi::{count, separated_list1};
 use nom::sequence::separated_pair;
-use nom::IResult;
+use nom::{IResult, Parser};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
@@ -91,7 +91,7 @@ fn load(data: &str) -> IResult<&str, Vec<(&str, u32)>> {
     separated_list1(
         newline,
         separated_pair(alphanumeric1, space1, nom::character::complete::u32),
-    )(data)
+    ).parse(data)
 }
 
 fn type_of_with_joker(hands: &str) -> Type {

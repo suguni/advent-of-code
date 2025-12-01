@@ -3,8 +3,8 @@ use nom::character::complete;
 use nom::character::complete::{digit1, newline, space1};
 use nom::combinator::complete;
 use nom::multi::separated_list1;
-use nom::sequence::{pair, tuple};
-use nom::IResult;
+use nom::sequence::pair;
+use nom::{IResult, Parser};
 use std::iter::zip;
 
 const INPUT: &str = "Time:        53     71     78     80
@@ -35,15 +35,15 @@ fn count_record(time: u64, distance: u64) -> u64 {
 
 fn load1(data: &str) -> IResult<&str, Vec<(u64, u64)>> {
     let (data, (_, _, times)) =
-        tuple((tag("Time:"), space1, separated_list1(space1, complete::u64)))(data)?;
+        ((tag("Time:"), space1, separated_list1(space1, complete::u64))).parse(data)?;
 
     let (data, _) = newline(data)?;
 
-    let (data, (_, _, distances)) = tuple((
+    let (data, (_, _, distances)) = ((
         tag("Distance:"),
         space1,
         separated_list1(space1, complete::u64),
-    ))(data)?;
+    )).parse(data)?;
 
     let pairs: Vec<(u64, u64)> = zip(times.into_iter(), distances.into_iter()).collect();
 
@@ -52,12 +52,12 @@ fn load1(data: &str) -> IResult<&str, Vec<(u64, u64)>> {
 
 fn load2(data: &str) -> IResult<&str, (u64, u64)> {
     let (data, (_, _, times)) =
-        tuple((tag("Time:"), space1, separated_list1(space1, digit1)))(data)?;
+        ((tag("Time:"), space1, separated_list1(space1, digit1))).parse(data)?;
 
     let (data, _) = newline(data)?;
 
     let (data, (_, _, distances)) =
-        tuple((tag("Distance:"), space1, separated_list1(space1, digit1)))(data)?;
+        ((tag("Distance:"), space1, separated_list1(space1, digit1))).parse(data)?;
 
     let time = times.concat().parse::<u64>().unwrap();
     let distances = distances.concat().parse::<u64>().unwrap();

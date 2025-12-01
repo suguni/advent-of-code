@@ -1,19 +1,13 @@
 #![allow(dead_code)]
 
-use crate::read_file;
 use itertools::Itertools;
-use nom::bytes::complete::{tag, take_till};
-use nom::character::complete;
-use nom::character::complete::{char, digit1, i32, line_ending, space1};
-use nom::combinator::map_res;
-use nom::multi::{many0, separated_list1};
-use nom::sequence::{delimited, preceded, separated_pair, terminated, tuple};
-use nom::{FindSubstring, IResult, Slice};
-use num::{abs, signum};
+use nom::bytes::complete::tag;
+use nom::character::complete::{char, i32};
+use nom::sequence::{delimited, preceded, separated_pair};
+use nom::{FindSubstring, IResult, Parser};
 use regex::Regex;
-use std::iter::{Enumerate, FilterMap, Iterator};
+use std::iter::Iterator;
 use std::ops::{Index, Sub};
-use std::str::Chars;
 
 const QUIZ_INPUT: &str = include_str!("../../data/2024/input3.txt");
 
@@ -35,7 +29,7 @@ fn parse_mul(input: &str) -> IResult<&str, (i32, i32)> {
     preceded(
         tag("mul"),
         delimited(tag("("), separated_pair(i32, char(','), i32), tag(")")),
-    )(input)
+    ).parse(input)
 }
 
 fn quiz1() -> i32 {
@@ -78,7 +72,6 @@ fn quiz2() -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nom::bytes::complete::take_until;
 
     const SAMPLE: &str = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))";
 

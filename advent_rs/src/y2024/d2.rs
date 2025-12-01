@@ -6,7 +6,7 @@ use nom::character::complete;
 use nom::character::complete::{line_ending, space1};
 use nom::multi::{many0, separated_list1};
 use nom::sequence::terminated;
-use nom::{FindSubstring, IResult, Slice};
+use nom::{FindSubstring, IResult, Parser};
 use num::{abs, signum};
 use std::iter::{Enumerate, FilterMap, Iterator};
 use std::ops::{Index, Sub};
@@ -18,7 +18,7 @@ fn parse_data(input: &str) -> IResult<&str, Vec<Vec<i32>>> {
     many0(terminated(
         separated_list1(space1, complete::i32),
         line_ending,
-    ))(input)
+    )).parse(input)
 }
 
 fn quiz1() -> usize {

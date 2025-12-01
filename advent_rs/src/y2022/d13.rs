@@ -8,7 +8,7 @@ use nom::character::complete;
 use nom::combinator::eof;
 use nom::multi::separated_list0;
 use nom::sequence::terminated;
-use nom::IResult;
+use nom::{IResult, Parser};
 use regex::Regex;
 
 use PackData::*;
@@ -56,7 +56,7 @@ fn v(input: &str) -> IResult<&str, PackData> {
 
 fn l(input: &str) -> IResult<&str, PackData> {
     let (input, _) = tag("[")(input)?;
-    let (input, vs) = separated_list0(tag(","), alt((v, l)))(input)?;
+    let (input, vs) = separated_list0(tag(","), alt((v, l))).parse(input)?;
     let (input, _) = tag("]")(input)?;
     Ok((input, L(vs)))
 }

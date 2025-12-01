@@ -24,7 +24,7 @@ enum Op<'a> {
     Eq(&'a str, u32),
 }
 
-fn lens(s: &str) -> Op {
+fn lens(s: &str) -> Op<'_> {
     if s.ends_with('-') {
         Op::Dash(&s[..s.len() - 1])
     } else {

@@ -5,7 +5,7 @@ use nom::character::complete::space1;
 use nom::combinator::map;
 use nom::multi::{many1, separated_list1};
 use nom::sequence::separated_pair;
-use nom::IResult;
+use nom::{IResult, Parser};
 use std::cmp::min;
 use std::ptr::replace;
 
@@ -13,7 +13,7 @@ const INPUT: &str = include_str!("../../data/2023/input12.txt");
 
 fn load_line(line: &str) -> (Vec<char>, Vec<u32>) {
     let (_, result): (_, (Vec<char>, Vec<u32>)) =
-        separated_pair(marks_parser, space1, nums_parser)(line).unwrap();
+        separated_pair(marks_parser, space1, nums_parser).parse(line).unwrap();
     result
 }
 
@@ -22,14 +22,14 @@ fn marks_parser(line: &str) -> IResult<&str, Vec<char>> {
         nom::character::complete::char('#'),
         nom::character::complete::char('.'),
         nom::character::complete::char('?'),
-    )))(line)
+    ))).parse(line)
 }
 
 fn nums_parser(line: &str) -> IResult<&str, Vec<u32>> {
     separated_list1(
         nom::character::complete::char(','),
         nom::character::complete::u32,
-    )(line)
+    ).parse(line)
 }
 
 fn find_positions(marks: &[char], count: usize) -> Vec<usize> {

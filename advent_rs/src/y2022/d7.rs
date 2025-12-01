@@ -7,7 +7,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, anychar, digit1, newline, not_line_ending, space1};
 use nom::multi::{separated_list0, separated_list1};
 use nom::sequence::separated_pair;
-use nom::IResult;
+use nom::{IResult, Parser};
 use regex::Regex;
 
 use crate::read_file;
@@ -26,32 +26,32 @@ enum File<'a> {
     File(&'a str, usize),
 }
 
-fn file(input: &str) -> IResult<&str, File> {
-    let (input, (size, name)) = separated_pair(digit1, space1, not_line_ending)(input)?;
+fn file(input: &str) -> IResult<&str, File<'_>> {
+    let (input, (size, name)) = separated_pair(digit1, space1, not_line_ending).parse(input)?;
     Ok((input, File::File(name, size.parse::<usize>().unwrap())))
 }
 
-fn dir(input: &str) -> IResult<&str, File> {
+fn dir(input: &str) -> IResult<&str, File<'_>> {
     let (input, _) = tag("dir ")(input)?;
     let (input, dir) = not_line_ending(input)?;
     Ok((input, File::Dir(dir)))
 }
 
-fn ls(input: &str) -> IResult<&str, Op> {
+fn ls(input: &str) -> IResult<&str, Op<'_>> {
     let (input, _) = tag("$ ls")(input)?;
     let (input, _) = newline(input)?;
-    let (input, fs) = separated_list1(newline, alt((dir, file)))(input)?;
+    let (input, fs) = separated_list1(newline, alt((dir, file))).parse(input)?;
     Ok((input, Op::Ls(fs)))
 }
 
-fn cd(input: &str) -> IResult<&str, Op> {
+fn cd(input: &str) -> IResult<&str, Op<'_>> {
     let (input, _) = tag("$ cd ")(input)?;
-    let (input, dir) = alt((tag(".."), alpha1, tag("/")))(input)?;
+    let (input, dir) = alt((tag(".."), alpha1, tag("/"))).parse(input)?;
     Ok((input, Op::Cd(dir)))
 }
 
-fn commands(input: &str) -> IResult<&str, Vec<Op>> {
-    separated_list1(newline, alt((ls, cd)))(input)
+fn commands(input: &str) -> IResult<&str, Vec<Op<'_>>> {
+    separated_list1(newline, alt((ls, cd))).parse(input)
 }
 
 fn proc(input: &str) -> HashMap<PathBuf, usize> {

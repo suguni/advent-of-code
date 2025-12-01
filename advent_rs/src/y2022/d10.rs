@@ -3,7 +3,7 @@ use nom::{
     bytes::complete::{self, tag},
     character::complete::newline,
     multi::separated_list1,
-    IResult,
+    IResult, Parser,
 };
 
 use crate::read_file;
@@ -37,7 +37,7 @@ fn addx(input: &str) -> IResult<&str, Instruction> {
 }
 
 fn instructions(input: &str) -> IResult<&str, Vec<Instruction>> {
-    let (input, ins) = separated_list1(newline, alt((noop, addx)))(input)?;
+    let (input, ins) = separated_list1(newline, alt((noop, addx))).parse(input)?;
     Ok((input, ins))
 }
 

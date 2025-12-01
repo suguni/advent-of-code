@@ -2,8 +2,8 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, newline, space1};
 use nom::combinator::map;
 use nom::multi::separated_list1;
-use nom::sequence::{pair, preceded, separated_pair, tuple};
-use nom::IResult;
+use nom::sequence::{pair, preceded, separated_pair};
+use nom::{IResult, Parser};
 
 const INPUT: &str = include_str!("../../data/2023/input5.txt");
 
@@ -103,21 +103,21 @@ fn seed_parser(line: &str) -> IResult<&str, Vec<u64>> {
     preceded(
         pair(tag("seeds:"), space1),
         separated_list1(space1, nom::character::complete::u64),
-    )(line)
+    ).parse(line)
 }
 
 fn maps_head_parser(line: &str) -> IResult<&str, (String, String)> {
     map(
-        tuple((alpha1, tag("-to-"), alpha1, space1, tag("map:"))),
+        ((alpha1, tag("-to-"), alpha1, space1, tag("map:"))),
         |(src, _, dest, _, _): (&str, _, &str, _, _)| (src.to_string(), dest.to_string()),
-    )(line)
+    ).parse(line)
 }
 
 fn maps_list_parser(data: &str) -> IResult<&str, Vec<(u64, u64, u64)>> {
     separated_list1(
         newline,
         map(
-            tuple((
+            ((
                 nom::character::complete::u64,
                 space1,
                 nom::character::complete::u64,
@@ -126,7 +126,7 @@ fn maps_list_parser(data: &str) -> IResult<&str, Vec<(u64, u64, u64)>> {
             )),
             |(dest, _, src, _, len): (u64, _, u64, _, u64)| (dest, src, len),
         ),
-    )(data)
+    ).parse(data)
 }
 
 fn maps_parser(data: &str) -> IResult<&str, Maps> {
@@ -151,7 +151,7 @@ fn maps_parser(data: &str) -> IResult<&str, Maps> {
                 // range_map,
             }
         },
-    )(data)
+    ).parse(data)
 }
 
 // fn build_map(ranges: &Vec<Range>) -> HashMap<u64, u64> {
@@ -166,14 +166,14 @@ fn maps_parser(data: &str) -> IResult<&str, Maps> {
 
 fn almanac_parser(data: &str) -> IResult<&str, Almanac> {
     map(
-        tuple((
+        ((
             seed_parser,
             newline,
             newline,
-            separated_list1(tuple((newline, newline)), maps_parser),
+            separated_list1(((newline, newline)), maps_parser),
         )),
         |(seeds, _, _, maps_list): (Vec<u64>, _, _, Vec<Maps>)| Almanac { seeds, maps_list },
-    )(data)
+    ).parse(data)
 }
 
 #[cfg(test)]

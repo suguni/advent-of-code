@@ -3,8 +3,8 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, alphanumeric1, newline, space1};
 use nom::combinator::map;
 use nom::multi::{many1, separated_list1};
-use nom::sequence::{separated_pair, tuple};
-use nom::IResult;
+use nom::sequence::{separated_pair};
+use nom::{IResult, Parser};
 use num::Num;
 use std::collections::HashMap;
 use std::ops::Add;
@@ -25,27 +25,27 @@ struct LR {
 
 fn load(data: &str) -> IResult<&str, Docs> {
     map(
-        separated_pair(alpha1, tuple((newline, newline)), networks_parser),
+        separated_pair(alpha1, ((newline, newline)), networks_parser),
         |(inst, networks)| Docs {
             inst: inst.to_string(),
             networks,
         },
-    )(data)
+    ).parse(data)
 }
 
 fn networks_parser(data: &str) -> IResult<&str, HashMap<String, LR>> {
     map(separated_list1(newline, network_parser), |vs| {
         vs.into_iter().collect()
-    })(data)
+    }).parse(data)
 }
 
 fn network_parser(line: &str) -> IResult<&str, (String, LR)> {
     map(
-        tuple((
+        ((
             alphanumeric1,
-            tuple((space1, tag("="), space1, tag("("))),
+            ((space1, tag("="), space1, tag("("))),
             alphanumeric1,
-            tuple((tag(","), space1)),
+            ((tag(","), space1)),
             alphanumeric1,
             tag(")"),
         )),
@@ -58,7 +58,7 @@ fn network_parser(line: &str) -> IResult<&str, (String, LR)> {
                 },
             )
         },
-    )(line)
+    ).parse(line)
 }
 
 fn solve1(data: &str) -> u32 {

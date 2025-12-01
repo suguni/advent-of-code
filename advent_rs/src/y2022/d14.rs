@@ -8,7 +8,7 @@ use nom::character::complete;
 use nom::character::complete::newline;
 use nom::multi::separated_list0;
 use nom::sequence::{separated_pair, terminated};
-use nom::IResult;
+use nom::{IResult, Parser};
 use regex::Regex;
 
 use crate::{interpolate_color, read_file};
@@ -16,11 +16,11 @@ use crate::{interpolate_color, read_file};
 const FILE_NAME: &str = "data/2022/input14.txt";
 
 fn coord(input: &str) -> IResult<&str, (u32, u32)> {
-    separated_pair(complete::u32, tag(","), complete::u32)(input)
+    separated_pair(complete::u32, tag(","), complete::u32).parse(input)
 }
 
 fn paths(input: &str) -> IResult<&str, Vec<Vec<(u32, u32)>>> {
-    separated_list0(newline, separated_list0(tag(" -> "), coord))(input)
+    separated_list0(newline, separated_list0(tag(" -> "), coord)).parse(input)
 }
 
 fn load(input: &str) -> Vec<Vec<(u32, u32)>> {
