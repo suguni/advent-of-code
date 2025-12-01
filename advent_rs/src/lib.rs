@@ -5,6 +5,7 @@ mod y2021;
 mod y2022;
 mod y2023;
 mod y2024;
+mod y2025;
 
 use std::collections::HashSet;
 use std::convert::TryInto;
