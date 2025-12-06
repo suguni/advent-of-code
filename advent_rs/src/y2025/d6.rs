@@ -10,12 +10,12 @@ fn quiz2() -> u64 {
 
 fn solve1(input: &str) -> u64 {
     let data = parse_data1(input);
-    data.calc1()
+    data.calc()
 }
 
 fn solve2(input: &str) -> u64 {
     let data = parse_data2(input);
-    data.calc2()
+    data.calc()
 }
 
 fn parse_data1(input: &str) -> Data {
@@ -24,7 +24,7 @@ fn parse_data1(input: &str) -> Data {
         .map(|line| line.split_ascii_whitespace().collect::<Vec<&str>>())
         .collect::<Vec<_>>();
 
-    let nums = lines
+    let row_nums = lines
         .iter()
         .take(lines.len() - 1)
         .map(|line| {
@@ -33,6 +33,16 @@ fn parse_data1(input: &str) -> Data {
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
+
+    let mut nums = vec![];
+    let cols = row_nums.first().unwrap().len();
+    for c in 0..cols {
+        let mut group = vec![];
+        for r in 0..row_nums.len() {
+            group.push(row_nums[r][c]);
+        }
+        nums.push(group);
+    }
 
     let ops = lines
         .last()
@@ -50,35 +60,7 @@ struct Data {
 }
 
 impl Data {
-    fn calc1(&self) -> u64 {
-        let mut ns = vec![];
-        let rows = self.nums.len();
-        let cols = self.ops.len();
-
-        for c in 0..cols {
-            let op = self.ops[c];
-
-            let mut result = match op {
-                '*' => 1,
-                '+' => 0,
-                _ => panic!("invalid operator"),
-            };
-
-            for r in 0..rows {
-                result = match op {
-                    '*' => result * self.nums[r][c],
-                    '+' => result + self.nums[r][c],
-                    _ => panic!("invalid operator"),
-                }
-            }
-
-            ns.push(result);
-        }
-
-        ns.iter().sum()
-    }
-
-    fn calc2(&self) -> u64 {
+    fn calc(&self) -> u64 {
         self.nums
             .iter()
             .enumerate()
@@ -150,9 +132,10 @@ mod tests {
         assert_eq!(
             data.nums,
             vec![
-                vec![123, 328, 51, 64],
-                vec![45, 64, 387, 23],
-                vec![6, 98, 215, 314]
+                vec![123, 45, 6],
+                vec![328, 64, 98],
+                vec![51, 387, 215],
+                vec![64, 23, 314],
             ]
         );
         assert_eq!(data.ops, vec!['*', '+', '*', '+']);
